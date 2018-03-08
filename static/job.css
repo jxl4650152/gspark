@@ -1,0 +1,225 @@
+* {
+    margin: 0;
+}
+body {
+    margin: 0;
+    padding: 0;
+    top: 0;
+    bottom: 0;
+}
+.Top-bar{
+    padding-top: 20px;
+    padding-left: 30px;
+    background-color:#3187c0;
+    height: 85px;
+}
+
+h1 {
+    color: white;
+}
+
+nav {
+    padding-top: 20px;
+    width: 220px;
+    height: 1000px;
+    background-color:  #4d98ca;
+    bottom: 0;
+
+}
+
+.menu-ul{
+    padding: 0;
+    list-style: none;
+}
+
+.menu-ul li{
+    border-bottom: 1px solid #276289;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 45px;
+    list-style: none;
+}
+
+.menu-ul li:hover{
+    background-color: white;
+    transition: linear all 0.4s;
+
+}
+
+.menu-ul li a:hover{
+    color: black;
+    transition: linear all;
+
+}
+
+.menu-ul li a:hover ul{
+    display: block;
+
+}
+
+.menu-ul li a {
+    text-decoration: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    color: white;
+    font-size: 13pt;
+}
+
+.submenu-ul{
+    border-bottom: 1px solid #276289;
+    padding: 0;
+    list-style: none;
+}
+
+.submenu-ul li{
+    border-bottom: none;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    list-style: none;
+}
+
+.job-list-ul li:hover{
+    background-color: white;
+    transition: linear all 0.4s;
+
+}
+
+.job-list-ul li a:hover{
+    color: black;
+    transition: linear all 0.4s;
+
+}
+
+
+
+
+
+.submenu-ul li a {
+    text-decoration: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    color: white;
+    font-size: 13pt;
+}
+
+
+
+
+
+
+.zuoye{
+
+    height: 100%;
+    position: absolute;
+    top: 105px;
+    bottom: 0;
+    left: 220px;
+
+}
+
+#id{
+    padding-left:10px;
+    font-size: 12pt;
+}
+.container {
+    position: static;
+    width: 250px;
+}
+
+.haha{
+    stroke: #bb6113;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    fill-opacity: 0;
+}
+
+.g_s_path{
+    stroke: #bb6113;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    fill-opacity: 0;
+    visibility: hidden;
+}
+
+.container rect{
+    stroke: #9b9798;
+    stroke-width: 3px;
+}
+
+.out-container rect{
+    stroke: #9b9798;
+    stroke-width: 3px;
+}
+
+.node-rect{
+    stroke-dasharray: 10, 5;
+    fill: none;
+    fill-opacity: 0;
+    z-index: 0;
+
+}
+
+.ex-rect{
+    fill: none;
+    fill-opacity: 0;
+    z-index: 0;
+}
+
+.executor-path{
+    fill: none;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    stroke: #bb6113;
+    z-index: 1;
+    visibility: hidden;
+
+}
+
+.cloud-svg{
+    transform: translate(100, 100);
+}
+
+.top-circle{
+    stroke: #9b9798;
+    fill: green;
+
+}
+
+.middle-circle{
+    stroke: #9b9798;
+    fill: green;
+}
+
+.progress {
+    stroke-opacity: 0;
+    fill: green;
+}
+
+
+td{
+    width: 100px;
+    height: 20px;
+}
+th{
+    width: 100px;
+    height: 20px;
+}
+table{
+    margin-left: 10px;
+    margin-top: 10px;
+    border-collapse: collapse;
+}
+.shuffle-summary{
+    margin-left: 10px;
+    margin-top: 10px;
+}
+.stage-summary{
+    margin-left: 10px;
+    margin-top: 10px;
+}

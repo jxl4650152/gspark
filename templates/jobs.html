@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>G-Spark</title>
+    <link rel="stylesheet" href="{{url_for("static", filename = "job.css" )}}" type="text/css">
+
+
+</head>
+<body>
+<div class="Top-bar">
+    <h1>G-Spark</h1>
+</div>
+
+
+<nav>
+
+    <ul class="menu-ul">
+        <li class="menu"><a href="/gspark/intro">简 介</a></li>
+        <li class="memu-li"><a href="/gspark/clusters/">集 群</a></li>
+        <li class="memu-li"><a  href="#">作 业</a></li>
+    </ul>
+    <ul class="submenu-ul">
+        <li class="submenu-li">
+            <span class="submenu-span">正在执行</span>
+            <ul class="job-list-ul">
+                {% for job in RunningJobs %}
+                    <li ><a class="running-job" href="/gspark/jobs/runningjobs/{{ job.id }}">{{ job.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+    <ul class="submenu-ul">
+        <li class="submenu-li">
+            <span class="submenu-span">历史作业</span>
+            <ul class="job-list-ul">
+                {% for job in HistoryJobs %}
+                    <li ><a class="history-job" href="/gspark/jobs/historyjobs/{{ job.id }}">{{ job.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+
+</nav>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+* {
+    margin: 0;
+}
+body {
+    margin: 0;
+    padding: 0;
+    top: 0;
+    bottom: 0;
+}
+.Top-bar{
+    padding-top: 20px;
+    padding-left: 30px;
+
+
+    background-color:#3187c0;
+    height: 85px;
+}
+
+h1 {
+    color: white;
+}
+
+nav {
+    padding-top: 20px;
+    width: 220px;
+    height: 1000px;
+    background-color:  #4d98ca;
+    bottom: 0;
+
+}
+
+nav ul {
+    padding: 0;
+    list-style: none;
+}
+
+nav ul li{
+    border-bottom: 1px solid #367eae;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 45px;
+    list-style: none;
+}
+
+nav ul li:hover{
+    background-color: white;
+    transition: linear all 0.4s;
+
+}
+
+nav ul li a:hover{
+    color: black;
+    transition: linear all;
+
+}
+
+nav ul li a:hover ul{
+    display: block;
+
+}
+
+nav ul li a {
+    text-decoration: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    color: white;
+    font-size: 13pt;
+}
+
+
+
+
+.jiqun{
+    width: 100%;
+    position: absolute;
+    top: 105px;
+    bottom: 0;
+    left: 220px;
+
+}
+
+br{
+    width: 100%;
+}
+
+td{
+    width: 100px;
+    height: 20px;
+}
+th{
+    width: 100px;
+    height: 20px;
+}
+table{
+    margin-left: 20px;
+    margin-top: 50px;
+    border-collapse: collapse;
+}
+
+
