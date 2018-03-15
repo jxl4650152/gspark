@@ -1,9 +1,11 @@
 from flask import *
-
+from flask_socketio import SocketIO
 import json
+import random
+import time
 
 app = Flask(__name__)
-
+socketio = SocketIO(app)
 
 
 
@@ -31,8 +33,8 @@ def clusters():
 @app.route('/gspark/jobs/')
 def jobs():
     global historyJobs, runningJobs
-    historyJobs = [Job(1, "first"), Job(2, "second")]
-    runningJobs = [Job(1, "first"), Job(2, "second")]
+    historyJobs = [Job(1, "Job15563"), Job(2, "Job16798")]
+    runningJobs = [Job(1, "Job25863"), Job(2, "Job26998")]
     return render_template("jobs.html", HistoryJobs=historyJobs, RunningJobs=runningJobs)
 
 
@@ -53,6 +55,30 @@ def historyjob(jobID):
     return render_template("job.html", HistoryJobs=historyJobs, RunningJobs=runningJobs, jobID=jobID)
 
 
+
+
+
+@socketio.on('connect')
+def connect_handler():
+
+    print "Client connected..."
+    print dir(request)
+    print request.remote_addr
+
+
+
+
+
+@socketio.on('test')
+def test_handler():
+    index = random.randrange(8)
+    socketio.emit(test_data[index]["event"], test_data[index]["data"])
+
+
+
+
+
+
 def getJob(id):
     clu_list = json.load(open("C:\Users\jthun\Downloads\clusters%s.json" % id))
     job = Job(clouds=clu_list)
@@ -71,10 +97,21 @@ class Job:
         self.clouds = clouds
 
 
+test_data = [
+        {"event": "GS", "data": ["cluster1-SiteDriver0", "cluster2-SiteDriver1",  "cluster3-SiteDriver2"]},
+        {"event": "SS", "data": {"site":"cluster2-SiteDriver1", "site_array": ["cluster1-SiteDriver0", "cluster3-SiteDriver2"]}},
+        {"event": "GS", "data": ["cluster2-SiteDriver1", "cluster3-SiteDriver2"]},
+        {"event": "SE", "data": {"site":"cluster1-SiteDriver0", "executors": ["cluster1-executor1","cluster1-executor2","cluster1-executor4"]}},
+        {"event": "SE", "data": {"site":"cluster2-SiteDriver1", "executors": ["cluster2-executor1","cluster2-executor2","cluster2-executor3"]}},
+        {"event": "SE", "data": {"site":"cluster3-SiteDriver2", "executors": ["cluster3-executor1","cluster3-executor2","cluster3-executor4","cluster3-executor8","cluster3-executor9"]}},
+        {"event": "EE", "data": {"exe":"cluster1-executor2", "executors": ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6"]}},
+        {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
+        {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},
+        ]
 
 
 
 
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)

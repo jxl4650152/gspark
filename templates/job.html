@@ -5,74 +5,80 @@
     <title>G-Spark</title>
     <link rel="stylesheet" href="{{url_for("static", filename = "job.css" )}}" type="text/css">
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script  src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 
 </head>
 <body>
 <div class="Top-bar">
     <h1>G-Spark</h1>
 </div>
+<div id="body">
+    <div class="nav-div">
+        <nav id="navigator">
 
-<nav id="navigator">
+        <ul class="menu-ul">
+            <li class="menu"><a href="/gspark/intro">简 介</a></li>
+            <li class="memu-li"><a href="/gspark/clusters/">集 群</a></li>
+            <li class="memu-li"><a  href="/gspark/jobs">作 业</a></li>
+        </ul>
+        <ul class="submenu-ul">
+            <li class="submenu-li">
+                <span class="submenu-span">正在执行</span>
+                <ul class="job-list-ul">
+                    {% for job in RunningJobs %}
+                        <li ><a class="running-job" href="/gspark/jobs/runningjobs/{{ job.id }}">{{ job.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
+        <ul class="submenu-ul">
+            <li class="submenu-li">
+                <span class="submenu-span">历史作业</span>
+                <ul class="job-list-ul">
+                    {% for job in HistoryJobs %}
+                        <li ><a class="history-job" href="/gspark/jobs/historyjobs/{{ job.id }}">{{ job.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </li>
+        </ul>
 
-    <ul class="menu-ul">
-        <li class="menu"><a href="/gspark/intro">简 介</a></li>
-        <li class="memu-li"><a href="/gspark/clusters/">集 群</a></li>
-        <li class="memu-li"><a  href="#">作 业</a></li>
-    </ul>
-    <ul class="submenu-ul">
-        <li class="submenu-li">
-            <span class="submenu-span">正在执行</span>
-            <ul class="job-list-ul">
-                {% for job in RunningJobs %}
-                    <li ><a class="running-job" href="/gspark/jobs/runningjobs/{{ job.id }}">{{ job.name }}</a></li>
-                {% endfor %}
-            </ul>
-        </li>
-    </ul>
-    <ul class="submenu-ul">
-        <li class="submenu-li">
-            <span class="submenu-span">历史作业</span>
-            <ul class="job-list-ul">
-                {% for job in HistoryJobs %}
-                    <li ><a class="history-job" href="/gspark/jobs/historyjobs/{{ job.id }}">{{ job.name }}</a></li>
-                {% endfor %}
-            </ul>
-        </li>
-    </ul>
-
-</nav>
-
-<div class="zuoye" id="main-body" >
-    <p id="id">作业编号：{{ jobID }} <input type="button" value="test1" onclick="fireTest1()"><input type="button" value="test2" onclick="fireTest2()"></p>
-    <svg class="out-container"  height="1000" width="{{ (job.clouds)|length * CloudWidth + ((job.clouds)|length + 2) * 40  }}" >
+    </nav>
+    </div>
+    <div class="job-div" >
+    <div id="toggle-button" onclick="toggle()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <p id="id">作业编号：{{ jobID }} <input type="button" value="collapse" onclick="foldAll()"><input type="button" value="random event" onclick="randomEvent()"><input type="button" value="test3" onclick="fireTest3()"></p>
+    <div id="clouds-div">
+        <svg class="out-container"  height="1000" width="{{ (job.clouds)|length * CloudWidth + ((job.clouds)|length + 2) * 40  }}" >
         {% for cloud in job.clouds %}
             <g class="cloud-svg-group" transform="translate({{ loop.index0 * (CloudWidth + 20) }}, 0)">
-
-                    <svg class="cloud-svg"   id="{{ cloud.name }}"  width="{{ CloudWidth + 60}}" height="500" >
                         <g transform="translate(30, 20)">
+                            <g id="cloud-{{ cloud.name }}">
                             <g>
-                                <rect class="cloud-rect" x="0" y="0" rx="15"  ry="15" width="{{ CloudWidth - 15 }}" height="450"
+                                <rect  id="{{ cloud.name }}" class="cloud-rect" x="0" y="0" rx="15"  ry="15" width="{{ CloudWidth - 15 }}" height="450"
                                     style="fill:blue;fill-opacity:0.1;
                                         stroke-opacity:0.9">
                                 </rect>
                                 <text x="17" y="30">{{ cloud.name }}</text>
                             </g>
+                            <g id="{{ cloud.name }}-master-node">
                         {% if cloud.nodes[0].components|length == 2 %}
-                            <g>
+                            <g >
                                 <rect class="node-rect" x="42.5" y="50" rx="15"  ry="15" width="180" height="180"
                                       style="stroke-opacity:0.9">
                                 </rect>
                                 <text  transform="translate(30, 170)rotate(-90)">{{ cloud.nodes[0].host }}</text>
                             </g>
                             <g>
-                                <rect  id="{{ cloud.nodes[0].components[0] }}" x="57.5" y="60" rx="15"  ry="15" width="150" height="50"
-                                    style="fill:blue;fill-opacity:0.1;
-                            stroke-opacity:0.9">
+                                <rect  id="{{ cloud.nodes[0].components[0] }}" x="57.5" y="60" rx="15"  ry="15" width="150" height="50">
                                 </rect>
                                 <text x="95" y="85">{{ cloud.nodes[0].components[0] }}</text>
                             </g>
-                            <g class="site-master" style="z-index: 1">
-                                <rect  id="{{ cloud.nodes[0].components[1] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
+                            <g class="site-master">
+                                <rect  id="{{ cloud.name }}-{{ cloud.nodes[0].components[1] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
                                     style="fill:blue;fill-opacity:0.1;stroke-opacity:0.9">
                                 </rect>
                                 <text x="95" y="200">{{ cloud.nodes[0].components[1] }}</text>
@@ -85,43 +91,45 @@
                                 <text transform="translate(30, 180)rotate(-90)">{{ cloud.nodes[0].host }}</text>
                             </g>
                             <g class="site-master" style="z-index: 1">
-                                <rect  id="{{ cloud.nodes[0].components[0] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
+                                <rect  id="{{ cloud.name }}-{{ cloud.nodes[0].components[0] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
                                     style="fill:blue;fill-opacity:0.1;stroke-opacity:0.9">
                                 </rect>
                                 <text x="95" y="200">{{ cloud.nodes[0].components[0] }}</text>
                             </g>
                         {% endif %}
-                            <g class="bottom-nodes" transform="translate(0, 280)" style="z-index: 0">
+                            </g>
+                            <g class="normal-nodes" transform="translate(0, 280)" style="z-index: 0">
                                 {% for i in range(1, cloud.nodes|length) %}
                                     {% if i % 2 != 0 %}
                                         <g class="left-colum-node" transform="translate(10, {{ (i//2)* 190 }})">
                                     {% else %}
                                         <g class="right-colum-node" transform="translate(155, {{ (i//2-1)* 190 }})">
                                     {% endif %}
-                                            <g>
-                                                <rect  class="node-rect"  rx="10"  ry="10" width="100" height="150" ></rect>
-                                                <text x="8" y="-8">{{ cloud.nodes[i].host }}</text>
+                                            <g class="node-group">
+                                                <rect  id="{{ cloud.nodes[i].host }}" class="node-rect"  rx="10"  ry="10" width="105" height="150" ></rect>
+                                                <text x="6" y="-8">{{ cloud.nodes[i].host }}</text>
                                             </g>
                                             {% for ex in range(cloud.nodes[i].components|length) %}
-                                                <g transform="translate(8, {{ ex * 45 + 10  }})">
-                                                    <rect id="{{ cloud.nodes[i].components[ex] }}" class="ex-rect"    rx="10"  ry="10" width="85" height="40"
+                                                <g class="executor-group" transform="translate(8, {{ ex * 45 + 10  }})">
+                                                    <rect id="{{ cloud.name }}-{{ cloud.nodes[i].components[ex] }}" class="ex-rect"    rx="10"  ry="10" width="85" height="40"
                                                             style="stroke-opacity:0.9"></rect>
                                                     <text x="3" y="20">{{ cloud.nodes[i].components[ex] }}</text>
                                                 </g>
                                             {% endfor %}
                                         </g>
                                 {% endfor %}
-                             </g>
-                            <g class="middle-paths"></g>
-                            <g class="middle-circles"></g>
-                            <g class="bottom-paths"></g>
-                            <g class="bottom-circles"></g>
+                             </g><!--normal-nodes-->
+                            </g>
                             </g><!--translate-->
-                        </svg>
-                </g><!--cloud-svg-group-->
+                            </g><!--cloudsvg-->
             {% endfor %}
-        <g class="g_s_path_group"></g>
+        <g class="top-paths"></g>
+        <g class="ss-paths"></g>
+        <g class="middle-paths"></g>
+        <g class="bottom-paths"></g>
+
     </svg><!--out-cotainner-->
+    </div>
     <div id="progress-div">
         <svg   class="progress-svg"  width="100%" height="100">
             <text y="55", x="15">进度: {{ job.progress }}%</text>
@@ -140,72 +148,178 @@
         </line>
         </svg>
     </div>
-    <p class="stage-summary">Stage 统计</p>
-    <table border="1">
-        <thead>
-        <tr>
-            <th>stageID</th>
-            <th></th>
-            <th>用时</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        </tbody>
-    </table>
-    <p class="shuffle-summary">Shuffle 统计</p>
-    <table border="1">
-        <thead>
-        <tr>
-            <th>shuffleID</th>
-            <th>数据传输量</th>
-            <th>用时</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="table-div">
+        <div style="margin-left: 50px;">
+            <p class="stage-summary">Stage 统计</p>
+            <table border="1">
+                <thead>
+                <tr>
+                    <th>stageID</th>
+                    <th></th>
+                    <th>用时</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-left: 50px;">
+            <p class="shuffle-summary">Shuffle 统计</p>
+            <table border="1">
+                <thead>
+                <tr>
+                    <th>shuffleID</th>
+                    <th>数据传输量</th>
+                    <th>用时</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 </div>
 <script>
+    var isFold = 0;
+    function toggle() {
+        document.getElementsByClassName("nav-div")[0].classList.toggle("nav-div-actived");
+        document.getElementsByClassName("job-div")[0].classList.toggle("job-div-actived");
+    }
+    function foldAll() {
+        var time = 800;
+        if(isFold === 0){
+                isFold = 1;
+             d3.selectAll(".node-group").select("rect")
+                 .transition()
+                 .duration(time)
+                 .attr("y", -28)
+                 .attr("height", 30)
+                .style("stroke-dasharray", 0);
+    
+             d3.selectAll(".executor-group")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", "translate(0, -35)");
+    
+             d3.selectAll(".executor-group").selectAll("rect")
+                 .transition()
+                 .duration(time)
+                 .attr("width", 100)
+                 .style("stroke-opacity", 0);
+    
+             d3.selectAll(".executor-group").selectAll("text")
+                 .attr("width", 100)
+                 .style("opacity", 0);
+    
+             d3.selectAll(".normal-nodes").selectAll(".left-colum-node")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function(d, i){
+                     return "translate(10, " + i*40 +")";
+                 });
+    
+             d3.selectAll(".normal-nodes").selectAll(".right-colum-node")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function(d, i){
+                     return "translate(155, " + i*40 +")";
+                 });
+         }else{
+            isFold = 0;
+            d3.selectAll(".normal-nodes").selectAll(".node-group").select("rect")
+                 .transition()
+                 .duration(time)
+                 .attr("y", 0)
+                 .attr("height", 150)
+                .style("stroke-dasharray", 8);
+    
+             d3.selectAll(".normal-nodes").selectAll(".left-colum-node").selectAll(".executor-group")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function (d, i) {
+                     return "translate(6, " + (8 + i *45) + ")";
+                 });
+    
+             d3.selectAll(".normal-nodes").selectAll(".right-colum-node").selectAll(".executor-group")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function (d, i) {
+                     return "translate(7, " + (8 + i *45) + ")";
+                 });
+    
+             d3.selectAll(".executor-group").selectAll("rect")
+                 .transition()
+                 .duration(time)
+                 .attr("width", 90)
+                 .style("stroke-opacity", 0.8);
+    
+             d3.selectAll(".executor-group").selectAll("text")
+                 .transition()
+                 .duration(time)
+                 .attr("x", 8)
+                 .style("opacity", 1);
+    
+             d3.selectAll(".normal-nodes").selectAll(".left-colum-node")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function(d, i){
+                     return "translate(10, " + i*180 +")";
+                 });
+    
+             d3.selectAll(".normal-nodes").selectAll(".right-colum-node")
+                 .transition()
+                 .duration(time)
+                 .attr("transform", function(d, i){
+                     return "translate(155, " + i*180 +")";
+                 });
+        }
+
+    }
+    function randomEvent() {
+        webSocket.emit("test");
+    }
+
         //set cloud-rect height to the same value
-        var container_svg = document.getElementsByClassName("cloud-svg");
+        var container_svg = document.getElementsByClassName("cloud-svg-group");
         var height_array = new Array(container_svg.length);
         Array.from(container_svg).forEach(function (item, index) {
             var bbox = item.getBBox();
@@ -214,7 +328,7 @@
         var max_height = Math.max.apply(Math, height_array);
         Array.from(container_svg).forEach(function (item) {
             var rect = item.getElementsByClassName("cloud-rect").item(0);
-            rect.setAttribute("height", max_height + "px");
+            rect.setAttribute("height", (max_height) + "px");
             item.setAttribute("height", max_height + 60 + "px");
         });
 
@@ -241,7 +355,6 @@
          * @returns {[number,number,number,number,number,number]} [width1, height1, x, y, width2, height2]
          */
         function getLoc(ele1, ele2){
-
                     var loc = [0, 0, 0, 0];
 
                     var ele1Rect = ele1.getBoundingClientRect();
@@ -256,45 +369,65 @@
 
                     return loc;
                 }
-        function AddLinkV(ele, point1, point2, type){
+        function getColumn(exe) {
+            var executor = document.getElementById(exe);
+            while(true){
+                    if(executor.hasAttribute("class") && executor.getAttribute("class") === "left-colum-node"){
+                        return "left"
+                        break;
+                    }else if(executor.hasAttribute("class") && executor.getAttribute("class") === "right-colum-node"){
+                        return "right"
+                        break;
+                    }else{
+                        executor = executor.parentNode;
+                    }
+                }
+        }
+        function AddLink(ele, point1, point2, type, pathClassName, circleClassName){
             var newpath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            if(type === 1) {
-                newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "C" + point1[0] + "," + ((point2[1] - point1[1]) / 2 + point1[1]) +
-                    " " + point2[0] + "," + point1[1] + " " + point2[0] + "," + point2[1]);
-                newpath.setAttribute("class", "g_s_path");
-            }else if(type === 2){
-                newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + point1[0] + "," + point2[1] + " " +  point2[0] + "," + point2[1]);
-                newpath.setAttribute("class", "executor-path");
+            switch(type) {
+                case "diagonal-y":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "C" + point1[0] + "," + (point2[1] +  point1[1])/2 +
+                                        " " + point2[0] + "," +  point1[1] + " " + point2[0] + "," + point2[1]);
+                    break;
+                    
+                case "diagonal-x":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "C" + (point2[0] +  point1[0])/2 + "," +  point1[1] +
+                                        " " + point1[0] + "," + point2[1] + " " + point2[0] + "," + point2[1]);
+                    break;
+
+                case "horizontal-up":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point2[0] +  point1[0])/2 + "," + (point2[1] - Math.abs(point1[0] - point2[0])/3) +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+
+                case "horizontal-bottom":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point2[0] +  point1[0])/2 + "," + (point2[1] + 10) +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+
+
+                case "vertical-left":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point1[0] - Math.abs(point1[1] - point2[1])/2) + "," + (point1[1] +  point2[1])/2 +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+                    
+                case "vertical-right":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point1[0] + Math.abs(point1[1] - point2[1])/2) + "," + (point1[1] +  point2[1])/2 +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
             }
+            newpath.setAttribute("class", pathClassName);
             ele.appendChild(newpath);
-}
-        function AddTopPaths(SiteArray){
-
-            var sites = SiteArray;
-            var outcontainer = document.getElementsByClassName("out-container")[0];
-            var g = document.getElementsByClassName("g_s_path_group")[0];
-            var GlobalDriver = document.getElementById("GlobalDriver");
-            var Gout = getLoc(outcontainer,GlobalDriver);
-            var GlobalLoc = [Gout[2] + Gout[4]/2, Gout[3] + Gout[5]];
-
-
-            sites.forEach(function(item, index, array){
-                var temp = document.getElementById(item);
+            
+            if(circleClassName){
                 var newcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                newcircle.setAttribute("cx", Gout[2] + Gout[4]/2);
-                newcircle.setAttribute("cy", Gout[3] + Gout[5]);
-                newcircle.setAttribute("r", 0);
-                newcircle.setAttribute("class","top-circle" );
-
-
-                var loc = getLoc(outcontainer, temp);
-                var p2 = [loc[2] + loc[4]/2, loc[3]];
-                AddLinkV(g, GlobalLoc, p2, 1);
-                g.appendChild(newcircle);
-
-            });
-
-    }
+                newcircle.setAttribute("cx", point1[0]);
+                newcircle.setAttribute("cy", point1[1]);
+                newcircle.setAttribute("class", circleClassName);
+                ele.appendChild(newcircle);
+            }
+        }
         function PathsGrow(PathsClassName, time){
         var paths = document.getElementsByClassName(PathsClassName);
         var classname = "." + PathsClassName;
@@ -310,127 +443,210 @@
         d3.selectAll(classname)
             .transition()
             .duration(time)
-            .attr("stroke-dashoffset", 0);
+            .attr("stroke-dashoffset", 0)
+            .remove();
 
 
     }
-        function connectTwoIds(ele, id1, id2, type){
-            console.log(ele, ele.nodeType, id1, id2);
-            var ele1 = ele.getElementById(id1);
-            var ele2 = ele.getElementById(id2);
-            var pos1 = getLoc(ele, ele1);
-            var pos2 = getLoc(ele, ele2);
-            var paths_g = ele.getElementsByClassName("middle-paths")[0];
-            if(type === 1) {
-                if (pos2[2] > pos1[2]) {
-                    AddLinkV(paths_g, [pos1[2] + pos1[4] / 2, pos1[3] + pos1[5]], [pos2[2], pos2[3] + pos2[5] / 2], 2);
-                } else {
-                    AddLinkV(paths_g, [pos1[2] + pos1[4] / 2, pos1[3] + pos1[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5] / 2], 2);
-                }
-            }else{
-            }
+        function circleMove(PathClass, CircleClass, time) {
+            var paths = document.getElementsByClassName(PathClass);
+            console.log(arguments.callee.name + ": " + arguments[0] + ", "+ arguments[1] + ", "+ arguments[2]);
+            d3.selectAll("." + CircleClass)
+                .attr("r", 4)
+                .attr("class","circle-moved")
+                .transition()
+                .duration(time)
+                .attrTween("cx", function (d, i, a) {
+                    var len = paths[i].getTotalLength();
+                    return function (t) {
+                        var p = paths[i].getPointAtLength((t) * len);
+                        return p.x;
+                    };
+                })
+                .attrTween("cy", function (d, i, a) {
+                    var len = paths[i].getTotalLength();
+                    return function (t) {
+                        var p = paths[i].getPointAtLength((t) * len);
+                        return p.y;
+                    };
+                })
+                .remove()
+                .attr("start",  PathsGrow(PathClass, time));
+
 
         }
+
+        function connectGlobalToSite(SiteArray){
+
+            var sites = SiteArray;
+            var outcontainer = document.getElementsByClassName("out-container")[0];
+            var pg = document.getElementsByClassName("top-paths")[0];
+
+
+            var GlobalDriver = document.getElementById("GlobalDriver");
+
+            var Gout = getLoc(outcontainer,GlobalDriver);
+            var GlobalLoc = [Gout[2] + Gout[4]/2, Gout[3] + Gout[5]];
+
+            sites.forEach(function(item, index, array){
+                var temp = document.getElementById(item);
+                var loc = getLoc(outcontainer, temp);
+                var p2 = [loc[2] + loc[4]/2, loc[3]];
+                AddLink(pg, GlobalLoc, p2, "diagonal-y", "globalToSitePath", "globalToSiteCircle");
+            });
+
+    }
         function connectSiteToEx(siteId, exArr) {
-            var site_svg = document.getElementById(siteId);
-            while(site_svg && (site_svg.getAttribute("class") !== "cloud-svg")){
-                site_svg = site_svg.parentNode;
-            }
-            var cloud_rect = site_svg.getElementsByClassName("cloud-rect")[0];
-            var circle_g = site_svg.getElementsByClassName("middle-circles")[0];
+            var path_g = document.getElementsByClassName("middle-paths")[0];
             var site = document.getElementById(siteId);
-            var pos = getLoc(cloud_rect,site);
-
-            console.log(circle_g);
-
+            var std = document.getElementsByClassName("out-container")[0];
+            var pos = getLoc(std,site);
 
             for(var i = 0; i < exArr.length; i++){
-                var newcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                //var newcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
 
-                newcircle.setAttribute("cx", pos[2] + pos[4]/2);
-                newcircle.setAttribute("cy", pos[3] + pos[5]);
-                newcircle.setAttribute("r", "0");
-                newcircle.setAttribute("class","middle-circle" );
+                //newcircle.setAttribute("cx", pos[2] + pos[4]/2);
+                //newcircle.setAttribute("cy", pos[3] + pos[5]);
+                //newcircle.setAttribute("r", "0");
+                //newcircle.setAttribute("class","middle-circle" );
+                var executor = document.getElementById(exArr[i]);
+                var pos2 = getLoc(std, executor);
+                console.log(exArr[i],": ", pos2);
 
-                connectTwoIds(site_svg, siteId, exArr[i], 1);
-                circle_g.insertBefore(newcircle,null);
+                while(true){
+
+                    if(executor.hasAttribute("class") && executor.getAttribute("class") === "left-colum-node" || executor.getAttribute("class") === "left-colum-node left-colum-node-active"){
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", "siteToExecutorPath","siteToExecutorCircle");
+                        break;
+                    }else if(executor.hasAttribute("class") && executor.getAttribute("class") === "right-colum-node"|| executor.getAttribute("class") === "right-colum-node right-colum-node-active"){
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5]/2],"diagonal-x", "siteToExecutorPath","siteToExecutorCircle");
+                        break;
+                    }else{
+                        executor = executor.parentNode;
+                    }
+                }
+
+
             }
         }
-        function topCircleMove() {
-            var paths = document.getElementsByClassName("g_s_path");
+        function innerShuffle(ex, exArr){
 
-            d3.selectAll(".top-circle")
-                .attr("r", 5)
-                .transition()
-                .duration(3000)
-                .attrTween("cx", function (d, i, a) {
-                    var len = paths[i].getTotalLength();
-                    return function (t) {
-                        var p = paths[i].getPointAtLength((t) * len);
+            var exe = document.getElementById(ex);
+            var path_g = document.getElementsByClassName("bottom-paths")[0];
 
-                        return p.x;
-                    };
-                })
-                .attrTween("cy", function (d, i, a) {
-                    var len = paths[i].getTotalLength();
-                    return function (t) {
-                        var p = paths[i].getPointAtLength((t) * len);
+            var std = document.getElementsByClassName("out-container")[0];
+            var pos1 = getLoc(std,exe);
+            var col1 = getColumn(ex);
 
-                        return p.y;
-                    };
-                })
-                .on("end", middleCircleMove)
-                .on("start", PathsGrow("g_s_path", 3000))
-                .remove();
-
-        }
-        function middleCircleMove() {
-            var paths = document.getElementsByClassName("executor-path");
-            d3.selectAll(".middle-circle")
-                .attr("r", 4)
-                .transition()
-                .duration(3000)
-                .attrTween("cx", function (d, i, a) {
-                    var len = paths[i].getTotalLength();
-                    return function (t) {
-                        var p = paths[i].getPointAtLength((t) * len);
-                        return p.x;
-                    };
-                })
-                .attrTween("cy", function (d, i, a) {
-                    var len = paths[i].getTotalLength();
-                    return function (t) {
-                        var p = paths[i].getPointAtLength((t) * len);
-                        return p.y;
-                    };
-                })
-                .on("start", PathsGrow("executor-path", 3000));
+            for(var i = 0; i < exArr.length; i++){
+                console.log(ex + " " + exArr[i]);
+                var col2 = getColumn(exArr[i]);
+                var exe1 = document.getElementById(exArr[i]);
+                var pos2 = getLoc(std,exe1);
+                if(col1 === "left"){
+                    var p1 = [pos1[2] + pos1[4], pos1[3] + pos1[5]/2];
+                    if(col2 === "left"){
+                        var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "vertical-right", "innerShufflePath", "innerShuffleCircle");
+                    }else{
+                        var p2 = [pos2[2], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "diagonal-x", "innerShufflePath", "innerShuffleCircle");
+                    }
+                }else{
+                    var p1 = [pos1[2], pos1[3] + pos1[5]/2];
+                    if(col2 === "left"){
+                        var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "diagonal-x", "innerShufflePath", "innerShuffleCircle");
+                    }else{
+                        var p2 = [pos2[2], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "vertical-left", "innerShufflePath", "innerShuffleCircle");
+                    }
+                }
+            }
 
         }
+        function outerShuffle(site, siteArr) {
+            var site = document.getElementById(site);
+            var path_g = document.getElementsByClassName("ss-paths")[0];
+            var std = document.getElementsByClassName("out-container")[0];
+            var pos1 = getLoc(std, site);
 
+            for (var i = 0; i < siteArr.length; i++) {
+                var site1 = document.getElementById(siteArr[i]);
+                var pos2 = getLoc(std, site1);
+                var p1 = [pos1[2] + pos1[4] / 2, pos1[3]];
+                var p2 = [pos2[2] + pos2[4] / 2, pos2[3]];
+                AddLink(path_g, p2, p1, "horizontal-up", "outerShufflePath", "outerShuffleCircle");
+            }
+        }
         function fireTest1() {
 
+        var test = ["cluster1-SiteDriver0", "cluster2-SiteDriver1",  "cluster3-SiteDriver2"];
 
-        var test = ["SiteDriver0", "SiteDriver1",  "SiteDriver2"];
-        AddTopPaths(test);
+        connectGlobalToSite(test);
+        connectSiteToEx("cluster1-SiteDriver0", ["cluster1-executor0","cluster1-executor1","cluster1-executor2","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
+        connectSiteToEx("cluster2-SiteDriver1", ["cluster2-executor1","cluster2-executor2","cluster2-executor4"]);
+        connectSiteToEx("cluster3-SiteDriver2", ["cluster3-executor0","cluster3-executor3","cluster3-executor5","cluster3-executor6","cluster3-executor7","cluster3-executor8"]);
+        shuffle("cluster1-executor2",["cluster1-executor1","cluster1-executor0","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
+        circleMove("globalToSitePath", "globalToSiteCircle", 3000);
 
-        connectSiteToEx("SiteDriver0", ["executor0","executor1","executor2","executor3","executor4","executor5","executor6","executor7"]);
-        connectSiteToEx("SiteDriver1", ["executor1","executor2","executor4"]);
-        connectSiteToEx("SiteDriver2", ["executor0","executor3","executor5","executor6","executor7","executor8"]);
-        topCircleMove();
+        setTimeout(function(){return circleMove("siteToExecutorPath", "siteToExecutorCircle", 3000);},3000);
+        setTimeout(function(){return circleMove("shufflePath", "shuffleCircle", 3000);},6000);
+
+
+
         }
-
         function fireTest2() {
 
 
-        var test = ["SiteDriver0", "SiteDriver1", "SiteDriver3"];
-        AddTopPaths(test);
-        connectSiteToEx("SiteDriver0", ["executor0","executor1","executor2","executor3","executor4"]);
-        connectSiteToEx("SiteDriver1", ["executor1","executor2","executor4"]);
-        connectSiteToEx("SiteDriver3", ["executor0","executor3","executor5","executor6","executor7","executor8"]);
-        topCircleMove();
+            var test = ["cluster1-SiteDriver0", "cluster2-SiteDriver1", "cluster4-SiteDriver3", "cluster5-SiteDriver4", "cluster6-SiteDriver5", "cluster8-SiteDriver7"];
+            connectGlobalToSite(test);
+            connectSiteToEx("cluster1-SiteDriver0", ["cluster1-executor0", "cluster1-executor1", "cluster1-executor2", "cluster1-executor3", "cluster1-executor4", "cluster1-executor5", "cluster1-executor6", "cluster1-executor7"]);
+            connectSiteToEx("cluster2-SiteDriver1", ["cluster2-executor1", "cluster2-executor2", "cluster2-executor4"]);
+            connectSiteToEx("cluster4-SiteDriver3", ["cluster4-executor0", "cluster4-executor3", "cluster4-executor5", "cluster4-executor6", "cluster4-executor7", "cluster4-executor8"]);
+            connectSiteToEx("cluster5-SiteDriver4", ["cluster5-executor0", "cluster5-executor1", "cluster5-executor2", "cluster5-executor3", "cluster5-executor4", "cluster5-executor5", "cluster5-executor6", "cluster5-executor7"]);
+            connectSiteToEx("cluster6-SiteDriver5", ["cluster6-executor1", "cluster6-executor2", "cluster6-executor4"]);
+            connectSiteToEx("cluster8-SiteDriver7", ["cluster8-executor0", "cluster8-executor3", "cluster8-executor5", "cluster8-executor6", "cluster8-executor7", "cluster8-executor8"]);
+        }
+        function fireTest3() {
+            //connectSiteToEx("cluster1-executor2", ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
+            //circleMove("middle-path", "middle-circle", 3000);
+
+
         }
 
+
+        var webSocket = io.connect("http://192.168.3.116:5000");
+
+        webSocket.on("connect", function () {
+                console.log("connected");
+        });
+
+        webSocket.on("event", function (data) {
+            console.log(data);
+        });
+
+        webSocket.on("GS", function (data) {
+            console.log(data);
+            connectGlobalToSite(data);
+            circleMove("globalToSitePath", "globalToSiteCircle", 2000);
+        });
+
+        webSocket.on("SS", function (data) {
+            console.log(data);
+            outerShuffle(data.site, data.site_array);
+            circleMove("outerShufflePath", "outerShuffleCircle", 2000);
+        });
+
+        webSocket.on("SE", function (data) {
+            connectSiteToEx(data.site, data.executors);
+            circleMove("siteToExecutorPath", "siteToExecutorCircle", 2000);
+            });
+        webSocket.on("EE", function (data) {
+            console.log(data);
+            innerShuffle(data.exe, data.executors);
+            circleMove("innerShufflePath", "innerShuffleCircle", 2000);
+            });
     </script>
 
 </body>

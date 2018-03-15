@@ -8,47 +8,29 @@ body {
     bottom: 0;
 }
 .Top-bar{
-
-    left: 0;
-    top: 0;
-    right: 0;
     padding-top: 20px;
     padding-left: 30px;
     background-color:#3187c0;
-    height: 75px;
-    fill-opacity: 1;
-    z-index: 0;
+    height: 85px;
 }
 
 h1 {
     color: white;
 }
-#body{
-    fill-opacity: 1;
-    position:absolute;
-    top:95px;
-    display:flex;
-    flex-flow: row nowrap;
-    z-index: 10;
-}
 
 
-.nav-div{
-    transition: all 500ms ease;
-    width:220px;
-    transform: translate3d(-220px, 0, 0);
-}
-.nav-div-actived {
-    transform: translate3d(0, 0, 0);
-
-}
 
 nav {
+    position:absolute;
+    display:inline-block;
     padding-top: 20px;
     width: 220px;
     height: 1000px;
     background-color:  #4d98ca;
 }
+
+
+
 
 
 .menu-ul{
@@ -139,18 +121,17 @@ nav {
 
 
 
-.job-div{
-    transition: all 500ms ease;
-    transform: translate3d(-220px, 0, 0);
+
+
+
+.zuoye{
+    display:inline-block;
+    height: 100%;
+    position: absolute;
+
+
+
 }
-
-
-.job-div-actived{
-    transform: translate3d(0px, 0, 0);
-}
-
-
-
 
 #toggle-button{
     height: 40px;
@@ -164,32 +145,23 @@ nav {
     background: #395eb7;
 }
 
-
-
 #id{
     padding-left:30px;
     font-size: 12pt;
-    padding-bottom: 10px;
-    box-shadow: 0 5px 5px  #afb4af;
-}
-
-#clouds-div{
-    height: 680px;
-    overflow-y:scroll;
 }
 .container {
     position: static;
     width: 250px;
 }
 
-#GlobalDriver{
-    stroke: 3px;
-    fill: #48e913;
-    fill-opacity: 0.3;
+.haha{
+    stroke: #bb6113;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    fill-opacity: 0;
 }
 
-
-.globalToSitePath{
+.g_s_path{
     stroke: #bb6113;
     stroke-opacity: 0.7;
     stroke-width: 3;
@@ -197,15 +169,7 @@ nav {
     visibility: hidden;
 }
 
-.siteToExecutorPath{
-    stroke: #bb6113;
-    stroke-opacity: 0.9;
-    stroke-width: 2;
-    fill-opacity: 0;
-    visibility: hidden;
-}
-
-.innerShufflePath{
+.top-path{
     stroke: #bb6113;
     stroke-opacity: 0.7;
     stroke-width: 3;
@@ -213,7 +177,15 @@ nav {
     visibility: hidden;
 }
 
-.outerShufflePath{
+.middle-path{
+    stroke: #bb6113;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    fill-opacity: 0;
+    visibility: hidden;
+}
+
+.bottom-path{
     stroke: #bb6113;
     stroke-opacity: 0.7;
     stroke-width: 3;
@@ -236,56 +208,50 @@ nav {
     stroke-dasharray: 10, 5;
     fill: none;
     fill-opacity: 0;
-    will-change: transform, stroke-dasharray;
-}
+    z-index: 0;
 
-.executor-group{
-    will-change: transform;
 }
 
 .ex-rect{
     fill: none;
     fill-opacity: 0;
-    will-change: transform;
+    z-index: 0;
 }
 
+.executor-path{
+    fill: none;
+    stroke-opacity: 0.7;
+    stroke-width: 3;
+    stroke: #bb6113;
+    z-index: 1;
+    visibility: hidden;
 
+}
 
 .cloud-svg{
     transform: translate(100, 100);
 }
 
-.globalToSiteCircle{
+.top-circle{
     stroke: #9b9798;
     fill: green;
 }
 
-.siteToExecutorCircle{
+.middle-circle{
     stroke: #9b9798;
     fill: green;
 }
 
-
-.circle-moved{
+.bottom-circle{
     stroke: #9b9798;
     fill: green;
 }
-
-#progress-div{
-    padding-top: 10px;
-    box-shadow: 0 -8px 5px  #afb4af;
-}
-
 
 .progress {
     stroke-opacity: 0;
     fill: green;
 }
 
-
-.table-div{
-    display: flex;
-}
 
 td{
     width: 100px;

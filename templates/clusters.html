@@ -3,19 +3,96 @@
 <head>
     <meta charset="UTF-8">
 
-    <link rel="stylesheet" href="{{url_for("static", filename = "index.css" )}}" type="text/css">
+    <link rel="stylesheet" href="{{url_for("static", filename = "clusters.css" )}}" type="text/css">
     <title>Title</title>
 </head>
 <body>
     <div class="Top-bar">
         <h1>G-Spark</h1>
     </div>
-    <nav>
+    <div class="main-body">
+        <div class="nav-div">
+            <nav>
+            <ul>
+                <li class="menu"><a href="/gspark/intro">简 介</a></li>
+                <li class="menu"><a href="#">集 群</a></li>
+                <li class="menu"><a href="/gspark/jobs/">作 业</a></li>
+            </ul>
+        </nav>
+        </div>
+        <div class="main-div">
+            <div class="input-div">
+                <p><label for="file">新任务</label><input id="file" type="file" name="submit"></p>
+            </div>
+            <div class="table-div">
+                <table width="600" border="1" style="border-collapse:collapse; border: 1px solid #AEAEAE;" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <th rowspan="2">
+                        Title
+                        </th>
+                        <th rowspan="2">
+                            Title
+                        </th>
+                        <th colspan="4">
+                            Title
+                        </th>
+                        <th colspan="2">
+                            Title
+                        </th>
 
-        <ul>
-            <li class="menu"><a href="/gspark/intro">简 介</a></li>
-            <li class="menu"><a href="#">集 群</a></li>
-            <li class="menu"><a href="/gspark/jobs/">作 业</a></li>
-        </ul>
+
+                        </tr>
+                    <tr>
+                <th>
+                    Title
+                </th>
+                <th>
+                   Title
+                </th>
+                <th>
+                    Title
+                </th>
+                <th>
+                    Title
+                </th>
+                <th>
+                    Title
+                </th>
+                <th>
+                    Title
+                </th>
+
+            </tr>
+                    <tr>
+                <td height="400">
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+                <td>
+                    Body
+                </td>
+            </tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
