@@ -7,8 +7,6 @@ import time
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-
-
 historyJobs = []
 runningJobs = []
 CloudWidth = 280
@@ -42,7 +40,6 @@ def jobs():
 def runningjob(jobID):
     global historyJobs, runningJobs, CloudWidth
     job = getJob(jobID)
-
     return render_template("job.html", HistoryJobs=historyJobs, RunningJobs=runningJobs,
                            jobID=jobID,
                            job=job,
@@ -54,10 +51,6 @@ def historyjob(jobID):
     global historyJobs, runningJobs
     return render_template("job.html", HistoryJobs=historyJobs, RunningJobs=runningJobs, jobID=jobID)
 
-
-
-
-
 @socketio.on('connect')
 def connect_handler():
 
@@ -66,17 +59,10 @@ def connect_handler():
     print request.remote_addr
 
 
-
-
-
 @socketio.on('test')
 def test_handler():
     index = random.randrange(8)
     socketio.emit(test_data[index]["event"], test_data[index]["data"])
-
-
-
-
 
 
 def getJob(id):
@@ -100,6 +86,7 @@ class Job:
 test_data = [
         {"event": "GS", "data": ["cluster1-SiteDriver0", "cluster2-SiteDriver1",  "cluster3-SiteDriver2"]},
         {"event": "SS", "data": {"site":"cluster2-SiteDriver1", "site_array": ["cluster1-SiteDriver0", "cluster3-SiteDriver2"]}},
+        {"event": "SS", "data": {"site":"cluster3-SiteDriver2", "site_array": ["cluster1-SiteDriver0", "cluster3-SiteDriver2","cluster4-SiteDriver3", "cluster6-SiteDriver5"]}},
         {"event": "GS", "data": ["cluster2-SiteDriver1", "cluster3-SiteDriver2"]},
         {"event": "SE", "data": {"site":"cluster1-SiteDriver0", "executors": ["cluster1-executor1","cluster1-executor2","cluster1-executor4"]}},
         {"event": "SE", "data": {"site":"cluster2-SiteDriver1", "executors": ["cluster2-executor1","cluster2-executor2","cluster2-executor3"]}},
@@ -108,9 +95,6 @@ test_data = [
         {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
         {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},
         ]
-
-
-
 
 
 if __name__ == '__main__':
