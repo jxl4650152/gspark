@@ -189,7 +189,7 @@ nav {
 }
 
 
-.globalToSitePath{
+path{
     stroke: #bb6113;
     stroke-opacity: 0.7;
     stroke-width: 3;
@@ -197,29 +197,6 @@ nav {
     visibility: hidden;
 }
 
-.siteToExecutorPath{
-    stroke: #bb6113;
-    stroke-opacity: 0.9;
-    stroke-width: 2;
-    fill-opacity: 0;
-    visibility: hidden;
-}
-
-.innerShufflePath{
-    stroke: #bb6113;
-    stroke-opacity: 0.7;
-    stroke-width: 3;
-    fill-opacity: 0;
-    visibility: hidden;
-}
-
-.outerShufflePath{
-    stroke: #bb6113;
-    stroke-opacity: 0.7;
-    stroke-width: 3;
-    fill-opacity: 0;
-    visibility: hidden;
-}
 
 
 .container rect{
@@ -255,21 +232,12 @@ nav {
     transform: translate(100, 100);
 }
 
-.globalToSiteCircle{
-    stroke: #9b9798;
-    fill: green;
-}
-
-.siteToExecutorCircle{
+circle{
     stroke: #9b9798;
     fill: green;
 }
 
 
-.circle-moved{
-    stroke: #9b9798;
-    fill: green;
-}
 
 #progress-div{
     padding-top: 10px;

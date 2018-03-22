@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 from flask import *
 from flask_socketio import SocketIO
 import json
@@ -54,21 +56,70 @@ def historyjob(jobID):
 @socketio.on('connect')
 def connect_handler():
 
-    print "Client connected..."
-    print dir(request)
-    print request.remote_addr
+    print "Client  from  ", request.remote_addr, " connected with sid ", request.sid
+
 
 
 @socketio.on('test')
 def test_handler():
-    index = random.randrange(8)
-    socketio.emit(test_data[index]["event"], test_data[index]["data"])
+    event = json.load(open(unicode("D:\课题组相关\data-exch\\task_launch_to_siteDriver.json", "utf8")))
+    res = eventConvert(event)
+    socketio.emit(res["event"], res["data"], room=request.sid)
 
 
 def getJob(id):
-    clu_list = json.load(open("C:\Users\jthun\Downloads\clusters%s.json" % id))
+    clu_list = json.load(open(unicode("D:\课题组相关\data-exch\clusters_defination.json", "utf8")))
     job = Job(clouds=clu_list)
     return job
+
+
+def eventConvert(event):
+    res = {"event": "", "data": {}}
+    if event["Event"] == "SparkListenerInnerShuffle":
+        res["event"] = "EE"
+        res["data"]["exe"] = event["to-host"] + "-" + event["to-component"]
+        res["data"]["executors"] = []
+        for host in event["from-hosts"]:
+            for component in host["from-components"]:
+                res["data"]["executors"].append(host["from-host"] + "-" + component["from-component"])
+
+        print "EE", res
+        return res
+
+    if event["Event"] == "SparkListenerOutterShuffle":
+        res["event"] = "SS"
+        res["data"]["site"] = event["to-component"]
+        res["data"]["site_array"] = []
+        for host in event["from-hosts"]:
+            for component in host["from-components"]:
+                res["data"]["site_array"].append(component["from-component"])
+
+        print "SS", res
+        return res
+
+    if event["Event"] == "SparkListenerTaskLaunchToExecutor":
+        res["event"] = "SE"
+        res["data"]["site"] = event["from-component"]
+        res["data"]["executors"] = []
+        for host in event["to-hosts"]:
+            for component in host["to-components"]:
+                res["data"]["executors"].append(host["to-host"] + "-" + component["to-component"])
+
+        print "SE", res
+        return res
+
+    if event["Event"] == "SparkListenerTaskLaunchToSiteDriver":
+        res["event"] = "GS"
+        res["data"] = []
+
+        for host in event["to-hosts"]:
+            for component in host["to-components"]:
+                res["data"].append(component["to-component"])
+
+        print "GS", res
+        return res
+
+
 
 
 class Job:
@@ -91,6 +142,12 @@ test_data = [
         {"event": "SE", "data": {"site":"cluster1-SiteDriver0", "executors": ["cluster1-executor1","cluster1-executor2","cluster1-executor4"]}},
         {"event": "SE", "data": {"site":"cluster2-SiteDriver1", "executors": ["cluster2-executor1","cluster2-executor2","cluster2-executor3"]}},
         {"event": "SE", "data": {"site":"cluster3-SiteDriver2", "executors": ["cluster3-executor1","cluster3-executor2","cluster3-executor4","cluster3-executor8","cluster3-executor9"]}},
+        {"event": "EE", "data": {"exe":"cluster1-executor2", "executors": ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6"]}},
+        {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
+        {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},
+        ]
+
+test_data1 = [
         {"event": "EE", "data": {"exe":"cluster1-executor2", "executors": ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6"]}},
         {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
         {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},

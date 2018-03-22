@@ -78,7 +78,7 @@
                                 <text x="95" y="85">{{ cloud.nodes[0].components[0] }}</text>
                             </g>
                             <g class="site-master">
-                                <rect  id="{{ cloud.name }}-{{ cloud.nodes[0].components[1] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
+                                <rect  id="{{ cloud.nodes[0].components[1] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
                                     style="fill:blue;fill-opacity:0.1;stroke-opacity:0.9">
                                 </rect>
                                 <text x="95" y="200">{{ cloud.nodes[0].components[1] }}</text>
@@ -91,7 +91,7 @@
                                 <text transform="translate(30, 180)rotate(-90)">{{ cloud.nodes[0].host }}</text>
                             </g>
                             <g class="site-master" style="z-index: 1">
-                                <rect  id="{{ cloud.name }}-{{ cloud.nodes[0].components[0] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
+                                <rect  id="{{  cloud.nodes[0].components[0] }}" x="57.5" y="170" rx="15"  ry="15" width="150" height="50"
                                     style="fill:blue;fill-opacity:0.1;stroke-opacity:0.9">
                                 </rect>
                                 <text x="95" y="200">{{ cloud.nodes[0].components[0] }}</text>
@@ -111,7 +111,7 @@
                                             </g>
                                             {% for ex in range(cloud.nodes[i].components|length) %}
                                                 <g class="executor-group" transform="translate(8, {{ ex * 45 + 10  }})">
-                                                    <rect id="{{ cloud.name }}-{{ cloud.nodes[i].components[ex] }}" class="ex-rect"    rx="10"  ry="10" width="85" height="40"
+                                                    <rect id="{{ cloud.nodes[i].host }}-{{ cloud.nodes[i].components[ex] }}" class="ex-rect"    rx="10"  ry="10" width="85" height="40"
                                                             style="stroke-opacity:0.9"></rect>
                                                     <text x="3" y="20">{{ cloud.nodes[i].components[ex] }}</text>
                                                 </g>
@@ -265,45 +265,38 @@
             isFold = 0;
             d3.selectAll(".normal-nodes").selectAll(".node-group").select("rect")
                  .transition()
-                 .duration(time)
+                 .duration(500)
                  .attr("y", 0)
                  .attr("height", 150)
-                .style("stroke-dasharray", 8);
-    
-             d3.selectAll(".normal-nodes").selectAll(".left-colum-node").selectAll(".executor-group")
-                 .transition()
+                .style("stroke-dasharray", 8)
+                .on("end", function foo(){
+                    d3.selectAll(".normal-nodes").selectAll(".left-colum-node").selectAll(".executor-group")
+
                  .attr("transform", function (d, i) {
                      return "translate(6, " + (8 + i *45) + ")";
                  });
-    
-             d3.selectAll(".normal-nodes").selectAll(".right-colum-node").selectAll(".executor-group")
-                 .transition()
+
+                    d3.selectAll(".normal-nodes").selectAll(".right-colum-node").selectAll(".executor-group")
                  .attr("transform", function (d, i) {
                      return "translate(7, " + (8 + i *45) + ")";
                  });
-    
-             d3.selectAll(".executor-group").selectAll("rect")
-                 .transition()
-                 .duration(time)
+                    d3.selectAll(".executor-group").selectAll("rect")
                  .attr("width", 90)
                  .style("visibility", "visible");
-    
-             d3.selectAll(".executor-group").selectAll("text")
-                 .transition()
-                 .duration(time)
-                 .attr("x", 8)
-                 .style("opacity", 1);
-    
+
+                    d3.selectAll(".executor-group").selectAll("text")
+                     .attr("x", 8)
+                     .style("opacity", 1);
+                });
+
              d3.selectAll(".normal-nodes").selectAll(".left-colum-node")
-                 .transition()
-                 .duration(time)
+
                  .attr("transform", function(d, i){
                      return "translate(10, " + i*180 +")";
                  });
     
              d3.selectAll(".normal-nodes").selectAll(".right-colum-node")
-                 .transition()
-                 .duration(time)
+
                  .attr("transform", function(d, i){
                      return "translate(155, " + i*180 +")";
                  });
