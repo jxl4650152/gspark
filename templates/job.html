@@ -237,14 +237,12 @@
     
              d3.selectAll(".executor-group")
                  .transition()
-                 .duration(time)
                  .attr("transform", "translate(0, -35)");
     
              d3.selectAll(".executor-group").selectAll("rect")
                  .transition()
-                 .duration(time)
                  .attr("width", 100)
-                 .style("stroke-opacity", 0);
+                 .style("visibility", "hidden");
     
              d3.selectAll(".executor-group").selectAll("text")
                  .attr("width", 100)
@@ -274,14 +272,12 @@
     
              d3.selectAll(".normal-nodes").selectAll(".left-colum-node").selectAll(".executor-group")
                  .transition()
-                 .duration(time)
                  .attr("transform", function (d, i) {
                      return "translate(6, " + (8 + i *45) + ")";
                  });
     
              d3.selectAll(".normal-nodes").selectAll(".right-colum-node").selectAll(".executor-group")
                  .transition()
-                 .duration(time)
                  .attr("transform", function (d, i) {
                      return "translate(7, " + (8 + i *45) + ")";
                  });
@@ -290,7 +286,7 @@
                  .transition()
                  .duration(time)
                  .attr("width", 90)
-                 .style("stroke-opacity", 0.8);
+                 .style("visibility", "visible");
     
              d3.selectAll(".executor-group").selectAll("text")
                  .transition()
@@ -419,7 +415,7 @@
             }
             newpath.setAttribute("class", pathClassName);
             ele.appendChild(newpath);
-            
+
             if(circleClassName){
                 var newcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 newcircle.setAttribute("cx", point1[0]);
@@ -453,7 +449,6 @@
             console.log(arguments.callee.name + ": " + arguments[0] + ", "+ arguments[1] + ", "+ arguments[2]);
             d3.selectAll("." + CircleClass)
                 .attr("r", 4)
-                .attr("class","circle-moved")
                 .transition()
                 .duration(time)
                 .attrTween("cx", function (d, i, a) {
@@ -477,6 +472,9 @@
         }
 
         function connectGlobalToSite(SiteArray){
+            var pathClass = "p" + Date.now();
+            var circleClass ="c" + Date.now();
+
 
             var sites = SiteArray;
             var outcontainer = document.getElementsByClassName("out-container")[0];
@@ -492,11 +490,16 @@
                 var temp = document.getElementById(item);
                 var loc = getLoc(outcontainer, temp);
                 var p2 = [loc[2] + loc[4]/2, loc[3]];
-                AddLink(pg, GlobalLoc, p2, "diagonal-y", "globalToSitePath", "globalToSiteCircle");
+                AddLink(pg, GlobalLoc, p2, "diagonal-y",pathClass, circleClass);
             });
+
+            return [pathClass, circleClass];
 
     }
         function connectSiteToEx(siteId, exArr) {
+            var pathClass = "p" + Date.now();
+            var circleClass = "c" + Date.now();
+
             var path_g = document.getElementsByClassName("middle-paths")[0];
             var site = document.getElementById(siteId);
             var std = document.getElementsByClassName("out-container")[0];
@@ -516,10 +519,10 @@
                 while(true){
 
                     if(executor.hasAttribute("class") && executor.getAttribute("class") === "left-colum-node" || executor.getAttribute("class") === "left-colum-node left-colum-node-active"){
-                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", "siteToExecutorPath","siteToExecutorCircle");
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", pathClass,circleClass);
                         break;
                     }else if(executor.hasAttribute("class") && executor.getAttribute("class") === "right-colum-node"|| executor.getAttribute("class") === "right-colum-node right-colum-node-active"){
-                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5]/2],"diagonal-x", "siteToExecutorPath","siteToExecutorCircle");
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5]/2],"diagonal-x", pathClass,circleClass);
                         break;
                     }else{
                         executor = executor.parentNode;
@@ -528,8 +531,11 @@
 
 
             }
+            return [pathClass, circleClass];
         }
         function innerShuffle(ex, exArr){
+            var pathClass = "p" + Date.now();
+            var circleClass =  "c" + Date.now();
 
             var exe = document.getElementById(ex);
             var path_g = document.getElementsByClassName("bottom-paths")[0];
@@ -547,37 +553,44 @@
                     var p1 = [pos1[2] + pos1[4], pos1[3] + pos1[5]/2];
                     if(col2 === "left"){
                         var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "vertical-right", "innerShufflePath", "innerShuffleCircle");
+                        AddLink(path_g, p2, p1, "vertical-right", pathClass,circleClass);
                     }else{
                         var p2 = [pos2[2], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "diagonal-x", "innerShufflePath", "innerShuffleCircle");
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass);
                     }
                 }else{
                     var p1 = [pos1[2], pos1[3] + pos1[5]/2];
                     if(col2 === "left"){
                         var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "diagonal-x", "innerShufflePath", "innerShuffleCircle");
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass);
                     }else{
                         var p2 = [pos2[2], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "vertical-left", "innerShufflePath", "innerShuffleCircle");
+                        AddLink(path_g, p2, p1, "vertical-left", pathClass,circleClass);
                     }
                 }
             }
+            return [pathClass, circleClass];
 
         }
         function outerShuffle(site, siteArr) {
-            var site = document.getElementById(site);
+            var pathClass = "p" + Date.now();
+            var circleClass = "c" + Date.now();
+
+            console.log(site);
+
+            var thesite = document.getElementById(site);
             var path_g = document.getElementsByClassName("ss-paths")[0];
             var std = document.getElementsByClassName("out-container")[0];
-            var pos1 = getLoc(std, site);
+            var pos1 = getLoc(std, thesite);
 
             for (var i = 0; i < siteArr.length; i++) {
                 var site1 = document.getElementById(siteArr[i]);
                 var pos2 = getLoc(std, site1);
                 var p1 = [pos1[2] + pos1[4] / 2, pos1[3]];
                 var p2 = [pos2[2] + pos2[4] / 2, pos2[3]];
-                AddLink(path_g, p2, p1, "horizontal-up", "outerShufflePath", "outerShuffleCircle");
+                AddLink(path_g, p2, p1, "horizontal-up", pathClass,circleClass);
             }
+            return [pathClass, circleClass];
         }
         function fireTest1() {
 
@@ -628,24 +641,24 @@
 
         webSocket.on("GS", function (data) {
             console.log(data);
-            connectGlobalToSite(data);
-            circleMove("globalToSitePath", "globalToSiteCircle", 2000);
+            var c = connectGlobalToSite(data);
+            circleMove(c[0], c[1], 2000);
         });
 
         webSocket.on("SS", function (data) {
-            console.log(data);
-            outerShuffle(data.site, data.site_array);
-            circleMove("outerShufflePath", "outerShuffleCircle", 2000);
+
+            var c = outerShuffle(data.site, data.site_array);
+            circleMove(c[0], c[1], 2000);
         });
 
         webSocket.on("SE", function (data) {
-            connectSiteToEx(data.site, data.executors);
-            circleMove("siteToExecutorPath", "siteToExecutorCircle", 2000);
+            var c = connectSiteToEx(data.site, data.executors);
+            circleMove(c[0], c[1], 2000);
             });
         webSocket.on("EE", function (data) {
-            console.log(data);
-            innerShuffle(data.exe, data.executors);
-            circleMove("innerShufflePath", "innerShuffleCircle", 2000);
+
+            var c = innerShuffle(data.exe, data.executors);
+            circleMove(c[0], c[1], 2000);
             });
     </script>
 
