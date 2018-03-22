@@ -50,7 +50,12 @@
         <span></span>
         <span></span>
     </div>
-    <p id="id">作业编号：{{ jobID }} <input type="button" value="collapse" onclick="foldAll()"><input type="button" value="random event" onclick="randomEvent()"><input type="button" value="test3" onclick="fireTest3()"></p>
+    <p id="id">作业编号：{{ jobID }} <input type="button" value="collapse" onclick="foldAll()">
+        <input type="button" value="ToSiteDriver" onclick="ToSiteDriver()">
+        <input type="button" value="OuterShuffle" onclick="OuterShuffle()">
+        <input type="button" value="ToExecutor" onclick="ToExecutor()">
+        <input type="button" value="InnerShuffle" onclick="InnerShuffle()">
+    </p>
     <div id="clouds-div">
         <svg class="out-container"  height="1000" width="{{ (job.clouds)|length * CloudWidth + ((job.clouds)|length + 2) * 40  }}" >
         {% for cloud in job.clouds %}
@@ -303,8 +308,17 @@
         }
 
     }
-    function randomEvent() {
-        webSocket.emit("test");
+    function ToSiteDriver() {
+        webSocket.emit("ToSiteDriver");
+    }
+    function OuterShuffle() {
+        webSocket.emit("OuterShuffle");
+    }
+    function ToExecutor() {
+        webSocket.emit("ToExecutor");
+    }
+    function InnerShuffle() {
+        webSocket.emit("InnerShuffle");
     }
 
         //set cloud-rect height to the same value
@@ -372,7 +386,7 @@
                     }
                 }
         }
-        function AddLink(ele, point1, point2, type, pathClassName, circleClassName){
+        function AddLink(ele, point1, point2, type, pathClassName, circleClassName, width){
             var newpath = document.createElementNS("http://www.w3.org/2000/svg", "path");
             switch(type) {
                 case "diagonal-y":
@@ -407,6 +421,9 @@
                     break;
             }
             newpath.setAttribute("class", pathClassName);
+            if(width){
+                newpath.setAttribute("stroke-width", width);
+            }
             ele.appendChild(newpath);
 
             if(circleClassName){
@@ -480,10 +497,10 @@
             var GlobalLoc = [Gout[2] + Gout[4]/2, Gout[3] + Gout[5]];
 
             sites.forEach(function(item, index, array){
-                var temp = document.getElementById(item);
+                var temp = document.getElementById(item[0]);
                 var loc = getLoc(outcontainer, temp);
                 var p2 = [loc[2] + loc[4]/2, loc[3]];
-                AddLink(pg, GlobalLoc, p2, "diagonal-y",pathClass, circleClass);
+                AddLink(pg, GlobalLoc, p2, "diagonal-y",pathClass, circleClass,item[1]);
             });
 
             return [pathClass, circleClass];
@@ -505,17 +522,16 @@
                 //newcircle.setAttribute("cy", pos[3] + pos[5]);
                 //newcircle.setAttribute("r", "0");
                 //newcircle.setAttribute("class","middle-circle" );
-                var executor = document.getElementById(exArr[i]);
+                var executor = document.getElementById(exArr[i][0]);
                 var pos2 = getLoc(std, executor);
-                console.log(exArr[i],": ", pos2);
 
                 while(true){
 
                     if(executor.hasAttribute("class") && executor.getAttribute("class") === "left-colum-node" || executor.getAttribute("class") === "left-colum-node left-colum-node-active"){
-                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", pathClass,circleClass);
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", pathClass,circleClass, exArr[i][1]);
                         break;
                     }else if(executor.hasAttribute("class") && executor.getAttribute("class") === "right-colum-node"|| executor.getAttribute("class") === "right-colum-node right-colum-node-active"){
-                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5]/2],"diagonal-x", pathClass,circleClass);
+                        AddLink(path_g,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5]/2],"diagonal-x", pathClass,circleClass,exArr[i][1]);
                         break;
                     }else{
                         executor = executor.parentNode;
@@ -538,27 +554,27 @@
             var col1 = getColumn(ex);
 
             for(var i = 0; i < exArr.length; i++){
-                console.log(ex + " " + exArr[i]);
-                var col2 = getColumn(exArr[i]);
-                var exe1 = document.getElementById(exArr[i]);
+
+                var col2 = getColumn(exArr[i][0]);
+                var exe1 = document.getElementById(exArr[i][0]);
                 var pos2 = getLoc(std,exe1);
                 if(col1 === "left"){
                     var p1 = [pos1[2] + pos1[4], pos1[3] + pos1[5]/2];
                     if(col2 === "left"){
                         var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "vertical-right", pathClass,circleClass);
+                        AddLink(path_g, p2, p1, "vertical-right", pathClass,circleClass, exArr[i][1]);
                     }else{
                         var p2 = [pos2[2], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass);
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass, exArr[i][1]);
                     }
                 }else{
                     var p1 = [pos1[2], pos1[3] + pos1[5]/2];
                     if(col2 === "left"){
                         var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass);
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass,exArr[i][1]);
                     }else{
                         var p2 = [pos2[2], pos2[3] + pos2[5]/2];
-                        AddLink(path_g, p2, p1, "vertical-left", pathClass,circleClass);
+                        AddLink(path_g, p2, p1, "vertical-left", pathClass,circleClass,exArr[i][1]);
                     }
                 }
             }
@@ -577,50 +593,14 @@
             var pos1 = getLoc(std, thesite);
 
             for (var i = 0; i < siteArr.length; i++) {
-                var site1 = document.getElementById(siteArr[i]);
+                var site1 = document.getElementById(siteArr[i][0]);
                 var pos2 = getLoc(std, site1);
                 var p1 = [pos1[2] + pos1[4] / 2, pos1[3]];
                 var p2 = [pos2[2] + pos2[4] / 2, pos2[3]];
-                AddLink(path_g, p2, p1, "horizontal-up", pathClass,circleClass);
+                AddLink(path_g, p2, p1, "horizontal-up", pathClass,circleClass,siteArr[i][1]);
             }
             return [pathClass, circleClass];
         }
-        function fireTest1() {
-
-        var test = ["cluster1-SiteDriver0", "cluster2-SiteDriver1",  "cluster3-SiteDriver2"];
-
-        connectGlobalToSite(test);
-        connectSiteToEx("cluster1-SiteDriver0", ["cluster1-executor0","cluster1-executor1","cluster1-executor2","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
-        connectSiteToEx("cluster2-SiteDriver1", ["cluster2-executor1","cluster2-executor2","cluster2-executor4"]);
-        connectSiteToEx("cluster3-SiteDriver2", ["cluster3-executor0","cluster3-executor3","cluster3-executor5","cluster3-executor6","cluster3-executor7","cluster3-executor8"]);
-        shuffle("cluster1-executor2",["cluster1-executor1","cluster1-executor0","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
-        circleMove("globalToSitePath", "globalToSiteCircle", 3000);
-
-        setTimeout(function(){return circleMove("siteToExecutorPath", "siteToExecutorCircle", 3000);},3000);
-        setTimeout(function(){return circleMove("shufflePath", "shuffleCircle", 3000);},6000);
-
-
-
-        }
-        function fireTest2() {
-
-
-            var test = ["cluster1-SiteDriver0", "cluster2-SiteDriver1", "cluster4-SiteDriver3", "cluster5-SiteDriver4", "cluster6-SiteDriver5", "cluster8-SiteDriver7"];
-            connectGlobalToSite(test);
-            connectSiteToEx("cluster1-SiteDriver0", ["cluster1-executor0", "cluster1-executor1", "cluster1-executor2", "cluster1-executor3", "cluster1-executor4", "cluster1-executor5", "cluster1-executor6", "cluster1-executor7"]);
-            connectSiteToEx("cluster2-SiteDriver1", ["cluster2-executor1", "cluster2-executor2", "cluster2-executor4"]);
-            connectSiteToEx("cluster4-SiteDriver3", ["cluster4-executor0", "cluster4-executor3", "cluster4-executor5", "cluster4-executor6", "cluster4-executor7", "cluster4-executor8"]);
-            connectSiteToEx("cluster5-SiteDriver4", ["cluster5-executor0", "cluster5-executor1", "cluster5-executor2", "cluster5-executor3", "cluster5-executor4", "cluster5-executor5", "cluster5-executor6", "cluster5-executor7"]);
-            connectSiteToEx("cluster6-SiteDriver5", ["cluster6-executor1", "cluster6-executor2", "cluster6-executor4"]);
-            connectSiteToEx("cluster8-SiteDriver7", ["cluster8-executor0", "cluster8-executor3", "cluster8-executor5", "cluster8-executor6", "cluster8-executor7", "cluster8-executor8"]);
-        }
-        function fireTest3() {
-            //connectSiteToEx("cluster1-executor2", ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6","cluster1-executor7"]);
-            //circleMove("middle-path", "middle-circle", 3000);
-
-
-        }
-
 
         var webSocket = io.connect("http://192.168.3.116:5000");
 
