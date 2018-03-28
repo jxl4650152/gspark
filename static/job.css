@@ -1,32 +1,8 @@
-* {
-    margin: 0;
-}
-body {
-    margin: 0;
-    padding: 0;
-    top: 0;
-    bottom: 0;
-}
-.Top-bar{
 
-    left: 0;
-    top: 0;
-    right: 0;
-    padding-top: 20px;
-    padding-left: 30px;
-    background-color:#3187c0;
-    height: 75px;
-    fill-opacity: 1;
-    z-index: 0;
-}
-
-h1 {
-    color: white;
-}
 #body{
     fill-opacity: 1;
-    position:absolute;
-    top:95px;
+    position:relative;
+
     display:flex;
     flex-flow: row nowrap;
     z-index: 10;
@@ -192,7 +168,6 @@ nav {
 path{
     stroke: #bb6113;
     stroke-opacity: 0.7;
-    stroke-width: 3;
     fill-opacity: 0;
     visibility: hidden;
 }

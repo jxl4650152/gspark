@@ -60,9 +60,27 @@ def connect_handler():
 
 
 
-@socketio.on('test')
+@socketio.on('ToSiteDriver')
 def test_handler():
     event = json.load(open(unicode("D:\课题组相关\data-exch\\task_launch_to_siteDriver.json", "utf8")))
+    res = eventConvert(event)
+    socketio.emit(res["event"], res["data"], room=request.sid)
+
+@socketio.on('OuterShuffle')
+def test_handler():
+    event = json.load(open(unicode("D:\课题组相关\data-exch\outter_shuffle.json", "utf8")))
+    res = eventConvert(event)
+    socketio.emit(res["event"], res["data"], room=request.sid)
+
+@socketio.on('ToExecutor')
+def test_handler():
+    event = json.load(open(unicode("D:\课题组相关\data-exch\\task_launch_to_executor.json", "utf8")))
+    res = eventConvert(event)
+    socketio.emit(res["event"], res["data"], room=request.sid)
+
+@socketio.on('InnerShuffle')
+def test_handler():
+    event = json.load(open(unicode("D:\课题组相关\data-exch\inner_shuffle.json", "utf8")))
     res = eventConvert(event)
     socketio.emit(res["event"], res["data"], room=request.sid)
 
@@ -81,7 +99,7 @@ def eventConvert(event):
         res["data"]["executors"] = []
         for host in event["from-hosts"]:
             for component in host["from-components"]:
-                res["data"]["executors"].append(host["from-host"] + "-" + component["from-component"])
+                res["data"]["executors"].append([host["from-host"] + "-" + component["from-component"], len(component["blocks"])])
 
         print "EE", res
         return res
@@ -92,7 +110,7 @@ def eventConvert(event):
         res["data"]["site_array"] = []
         for host in event["from-hosts"]:
             for component in host["from-components"]:
-                res["data"]["site_array"].append(component["from-component"])
+                res["data"]["site_array"].append([component["from-component"], len(component["blocks"])])
 
         print "SS", res
         return res
@@ -103,7 +121,7 @@ def eventConvert(event):
         res["data"]["executors"] = []
         for host in event["to-hosts"]:
             for component in host["to-components"]:
-                res["data"]["executors"].append(host["to-host"] + "-" + component["to-component"])
+                res["data"]["executors"].append([host["to-host"] + "-" + component["to-component"], len(component["tasks"])])
 
         print "SE", res
         return res
@@ -114,7 +132,7 @@ def eventConvert(event):
 
         for host in event["to-hosts"]:
             for component in host["to-components"]:
-                res["data"].append(component["to-component"])
+                res["data"].append([component["to-component"], len(component["tasks"])])
 
         print "GS", res
         return res
