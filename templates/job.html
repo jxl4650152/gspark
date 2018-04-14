@@ -137,12 +137,12 @@
     </svg><!--out-cotainner-->
     </div>
     <div id="progress-div">
-        <svg   class="progress-svg"  width="100%" height="100">
-            <text y="55", x="15">进度: {{ job.progress }}%</text>
-            <rect class="progress-bar" x="90" y="40" rx="15"  ry="15" width="1000" height="20"
+        <svg   class="progress-svg"  width="100%" height="80">
+            <text class="progress-text" y="55" x="15">进度: 0% </text>
+            <rect class="progress-bar" x="100" y="40" rx="15"  ry="15" width="1000" height="15"
                 style="fill:blue;fill-opacity:0.1;stroke:blue; stroke-opacity:0.9">
             </rect>
-            <rect class="progress" x="90" y="40" rx="15"  ry="15" width="{{ job.progress * 10 }}" height="20"
+            <rect class="progress" x="100" y="40" rx="15"  ry="15" width="0" height="15"
                 style="fill:green; stroke:blue; stroke-opacity:0.9">
             </rect>
         </svg>
@@ -226,6 +226,7 @@
 </div>
 <script>
     var isFold = 0;
+    var val = 0;
     function toggle() {
         document.getElementsByClassName("nav-div")[0].classList.toggle("nav-div-actived");
         document.getElementsByClassName("job-div")[0].classList.toggle("job-div-actived");
@@ -481,6 +482,16 @@
 
 
         }
+        function progress(val) {
+            d3.select(".progress")
+                .transition()
+                .duration(1000)
+                .attr("width", val*10);
+
+            d3.select(".progress-text")
+                .transition()
+                .text( "进度：" + val + "% ");
+        }
 
         function connectGlobalToSite(SiteArray){
             var pathClass = "p" + Date.now();
@@ -603,37 +614,86 @@
             return [pathClass, circleClass];
         }
 
-        var webSocket = io.connect("http://192.168.3.116:5000");
+        var webSocket = io.connect("ws://192.168.3.116:5000");
+        var stage = 0;
+        var innerShuffle_count = 1;
+        var outerShuffle_count = 1;
+        var toSite_count = 1;
 
         webSocket.on("connect", function () {
-                console.log("connected");
+            console.log("connected");
+            webSocket.emit("recieved", {stage: stage});
+
         });
 
-        webSocket.on("event", function (data) {
-            console.log(data);
+        webSocket.on("hello", function () {
+            console.log("nihao");
+            //webSocket.emit("recieved", {stage: stage});
+
         });
 
         webSocket.on("GS", function (data) {
             console.log(data);
+
             var c = connectGlobalToSite(data);
             circleMove(c[0], c[1], 2000);
+            setTimeout(function () {
+                webSocket.emit("recieved", {stage: stage + 1, count: 0});
+            }, 2000);
+            progress(25);
+
         });
+
+
+        webSocket.on("SE", function (data) {
+
+            var c = connectSiteToEx(data.site, data.executors);
+            circleMove(c[0], c[1], 2000);
+            if(toSite_count < 3){
+                webSocket.emit("recieved", {stage: stage + 1, count: toSite_count});
+                toSite_count++;
+                val =  25 + 2 * toSite_count;
+                progress(val);
+            }else{
+                setTimeout(function () {
+                    webSocket.emit("recieved", {stage: stage + 2, count: 0});
+                }, 2000);
+                progress(50);
+            }
+            });
+
+        webSocket.on("EE", function (data) {
+
+            var c = innerShuffle(data.exe, data.executors);
+            circleMove(c[0], c[1], 2000);
+            if(innerShuffle_count < 6){
+                webSocket.emit("recieved", {stage: stage + 2, count: innerShuffle_count});
+                innerShuffle_count++;
+                val = 50 + 4 * innerShuffle_count;
+                progress(val);
+            }else{
+                setTimeout(function () {
+                    webSocket.emit("recieved", {stage: stage + 3, count: 0});
+                }, 2000);
+                progress(75);
+            }
+            });
 
         webSocket.on("SS", function (data) {
 
             var c = outerShuffle(data.site, data.site_array);
             circleMove(c[0], c[1], 2000);
+            if(outerShuffle_count < 3){
+                webSocket.emit("recieved", {stage: stage + 3, count: outerShuffle_count});
+                outerShuffle_count++;
+                val = 75 + 7 * outerShuffle_count;
+                progress(val);
+            }else{
+                webSocket.emit("close");
+                progress(100);
+                val = 0;
+            }
         });
-
-        webSocket.on("SE", function (data) {
-            var c = connectSiteToEx(data.site, data.executors);
-            circleMove(c[0], c[1], 2000);
-            });
-        webSocket.on("EE", function (data) {
-
-            var c = innerShuffle(data.exe, data.executors);
-            circleMove(c[0], c[1], 2000);
-            });
     </script>
 
 </body>

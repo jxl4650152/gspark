@@ -17,3 +17,20 @@ body {
 h1 {
     color: white;
 }
+
+nav ul li a {
+    text-decoration: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    color: black;
+    font-size: 13pt;
+}
+
+nav {
+    padding-top: 20px;
+    width: 220px;
+    height: 1000px;
+    background-color:  #bdc3c7;
+}

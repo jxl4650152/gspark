@@ -1,13 +1,6 @@
 
 
-nav {
-    padding-top: 20px;
-    width: 220px;
-    height: 1000px;
-    background-color:  #4d98ca;
-    bottom: 0;
 
-}
 
 nav ul {
     padding: 0;
@@ -38,16 +31,6 @@ nav ul li a:hover{
 nav ul li a:hover ul{
     display: block;
 
-}
-
-nav ul li a {
-    text-decoration: none;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    padding-left: 50px;
-    padding-right: 50px;
-    color: white;
-    font-size: 13pt;
 }
 
 
