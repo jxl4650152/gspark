@@ -1,6 +1,11 @@
 
+#intro-div{
+    display: inline-block;
+}
 
-
+.body{
+    display: flex;
+}
 
 nav ul {
     padding: 0;
