@@ -1,11 +1,15 @@
 # -*- coding: UTF-8 -*-
-
+import eventlet
+from eventlet.green import socket
 from flask import *
-from flask_socketio import SocketIO
+from flask_socketio import *
 import json
 import random
 import time
 import threading
+import struct
+import Queue
+
 
 
 
@@ -16,6 +20,10 @@ historyJobs = []
 runningJobs = []
 CloudWidth = 280
 rand = []
+thread_running_flag = 0
+job_rooms = set()
+rooms_count = {}
+q = Queue.Queue(10)
 
 
 @app.route('/')
@@ -88,8 +96,6 @@ def connect_handler():
     #
     #             cond.wait(timeout=4)
     #             cond.release()
-
-
     print "Client  from ", request.remote_addr, " connected with sid ", request.sid
 
 
@@ -133,16 +139,53 @@ def connect_handler(data):
     print "recieved reply to", request.sid
     print " "
 
+
+@socketio.on('join')
+def on_join(data):
+    global thread_running_flag, job_rooms, rooms_count
+    room = data['room']
+    join_room(room)
+
+    if room in rooms_count:
+        rooms_count[room] += 1
+    else:
+        rooms_count[room] = 1
+    print "client join room in thread", threading.currentThread()
+    if not job_rooms:
+        job_rooms.add(room)
+        socketio.start_background_task(target=bg_thread)
+        # socketio.start_background_task(target=get_data)
+        event = threading.Event()
+        event.clear()
+        # consu_thread(event).start()
+        produ_thread(event).start()
+        thread_running_flag = 1
+        # # thread.start_new_thread(get_data, args=())
+        #
+        # if room not in thread_running:
+        #     thread_running.append(room)
+        #     print "start sending thread..."
+        #     my_pool.spawn(send_func, room)
+        #     my_pool.spawn(get_data)
+        #     my_pool.waitall()
+        #             # thread.start_new_thread(send_func, args=(room,))
+
+
 @socketio.on('disconnect')
 def connect_handler():
+    global rooms_count, job_rooms
+    print "leaving..."
+    room = rooms(sid=request.sid, namespace="/")[0]
+    leave_room(room)
+    rooms_count[room] -= 1
+    if rooms_count[room] == 0:
+        job_rooms.remove(room)
 
-    print "Client  from ", request.remote_addr, " disconnected with sid ", request.sid
 
 
 @socketio.on('close')
 def connect_handler():
-    global rand
-    rand = []
+    print "close"
 
 
 @socketio.on('ToSiteDriver')
@@ -226,8 +269,102 @@ def eventConvert(event):
         return res
 
 
+def send_func(room):
+    # t = int(round(time.time()))
+    # while True:
+    #     now = int(round(time.time()))
+    #     if (now - t) > 3:
+    #         t = now
+
+    print "send thread running, room", room
+    while True:
+        socketio.sleep(1)
+        socketio.emit("hello", data, room=room)
+
+    # while True:
+    #     # q_event.wait()
+    #
+    #     socketio.emit("hello", "data", room=room)
+    #     print "sending complete"
+    #     # q_event.clear()
+    #     # else:
+    #     #     continue
 
 
+# def get_data():
+#     print "get data thread running in thread", threading.currentThread()
+#     while True:
+#         msg.append("hello")
+#         socketio.sleep(0)
+
+
+def bg_thread():
+    while True:
+        if q.empty():
+            socketio.sleep(0)
+            continue
+        else:
+            msg = q.get()
+            socketio.emit("hello", msg, room="1")
+            socketio.sleep(0)
+
+
+class consu_thread(threading.Thread):
+    def __init__(self, event):
+        super(consu_thread, self).__init__()
+        self.event = event
+
+    def run(self):
+        print "consumer thread in", threading.currentThread()
+        print "socketio is", socketio
+        while True:
+            if q.empty():
+                print "queue is empty"
+                self.event.clear()
+                self.event.wait()
+            else:
+                data = q.get()
+                print "consumer get data", data
+                send(data)
+
+
+
+class produ_thread(threading.Thread):
+    def __init__(self, event):
+        super(produ_thread, self).__init__()
+        self.event = event
+
+
+    def run(self):
+        self.conn()
+
+
+    def conn(self):
+        print "[%s] connecting to Spark" % self.__class__.__name__
+        conn = socket.create_connection(("192.168.3.116", 2001), 1000)
+        print "[%s] connected to Spark" % self.__class__.__name__
+
+        while True:
+            if not job_rooms:
+                print "[%s] No receiver, stop connecting with Spark " % self.__class__.__name__
+                break
+            data_len = conn.recv(4)
+            if data_len == "":
+                break
+            print repr(data_len)
+            length = struct.unpack('!I', data_len)[0]
+            print length
+            data = conn.recv(length)
+            print "[%s] recieved data %s" % (self.__class__.__name__, data)
+            q.put(data)
+
+
+
+
+
+def send(data):
+    print "sending data..."
+    socketio.emit("hello", data, room="1")
 
 class Job:
     id = 0
@@ -264,7 +401,6 @@ test_data1 = [
 
 
 
-if __name__ == '__main__':
 
-    socketio.run(app)
+
 

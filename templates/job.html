@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{url_for("static", filename = "job.css" )}}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename = 'common.css' )}}" type="text/css">
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script  src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 
 </head>
 <body>
@@ -614,7 +614,7 @@
             return [pathClass, circleClass];
         }
 
-        var webSocket = io.connect("ws://192.168.7.64:2000");
+        var webSocket = io("ws://192.168.7.64:2000");
         var stage = 0;
         var innerShuffle_count = 1;
         var outerShuffle_count = 1;
@@ -622,7 +622,7 @@
 
         webSocket.on("connect", function () {
             console.log("connected");
-            webSocket.emit("recieved", {stage: stage});
+            webSocket.emit("join", {"room": "{{ jobID }}"})
 
         });
 
