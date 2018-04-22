@@ -13,8 +13,11 @@ import Queue
 
 
 
+
 app = Flask(__name__)
 socketio = SocketIO(app)
+
+
 
 historyJobs = []
 runningJobs = []
@@ -23,6 +26,7 @@ rand = []
 thread_running_flag = 0
 job_rooms = set()
 rooms_count = {}
+connect_flag = False
 q = Queue.Queue(10)
 
 
@@ -142,7 +146,7 @@ def connect_handler(data):
 
 @socketio.on('join')
 def on_join(data):
-    global thread_running_flag, job_rooms, rooms_count
+    global thread_running_flag, job_rooms, rooms_count, connect_flag
     room = data['room']
     join_room(room)
 
@@ -150,7 +154,8 @@ def on_join(data):
         rooms_count[room] += 1
     else:
         rooms_count[room] = 1
-    print "client join room in thread", threading.currentThread()
+        print "New room created:  ", room
+    print "client join room %s" % room
     if not job_rooms:
         job_rooms.add(room)
         socketio.start_background_task(target=bg_thread)
@@ -170,16 +175,25 @@ def on_join(data):
         #     my_pool.waitall()
         #             # thread.start_new_thread(send_func, args=(room,))
 
+    if job_rooms and (not connect_flag):
+        event = threading.Event()
+        event.clear()
+        # consu_thread(event).start()
+        produ_thread(event).start()
+        thread_running_flag = 1
 
 @socketio.on('disconnect')
 def connect_handler():
     global rooms_count, job_rooms
     print "leaving..."
     room = rooms(sid=request.sid, namespace="/")[0]
+    print rooms(sid=request.sid, namespace="/")
     leave_room(room)
     rooms_count[room] -= 1
+    print "job_rooms", rooms_count
     if rooms_count[room] == 0:
         job_rooms.remove(room)
+        print "job_rooms", job_rooms
 
 
 
@@ -340,23 +354,73 @@ class produ_thread(threading.Thread):
 
 
     def conn(self):
+        global connect_flag, job_rooms
         print "[%s] connecting to Spark" % self.__class__.__name__
-        conn = socket.create_connection(("192.168.3.116", 2001), 1000)
+        conn = socket.create_connection(("192.168.7.41", 6666), 1000)
+        connect_flag = True
         print "[%s] connected to Spark" % self.__class__.__name__
+
+
+
 
         while True:
             if not job_rooms:
-                print "[%s] No receiver, stop connecting with Spark " % self.__class__.__name__
+                print "[%s] No receiver" % self.__class__.__name__
+                conn.close()
                 break
-            data_len = conn.recv(4)
-            if data_len == "":
-                break
-            print repr(data_len)
-            length = struct.unpack('!I', data_len)[0]
-            print length
-            data = conn.recv(length)
-            print "[%s] recieved data %s" % (self.__class__.__name__, data)
-            q.put(data)
+            close_flag = False
+            while not close_flag and job_rooms:
+                raw_byte = conn.recv(1)
+                if raw_byte == '':
+                    close_flag = True
+                    connect_flag = False
+                    continue
+                elif raw_byte != '{':
+                    continue
+                else:
+                    flag = 1
+                    s = '{'
+                    while flag != 0:
+                        s_next = conn.recv(1)
+                        if s_next == '':
+                            connect_flag = False
+                            close_flag = True
+                            break
+                        s += s_next
+                        if s_next == '}':
+                            flag -= 1
+                        if s_next == '{':
+                            flag += 1
+                    if flag == 0:
+
+                        q.put(s)
+
+
+
+        # while True:
+        #     if not job_rooms:
+        #         print "[%s] No receiver" % self.__class__.__name__
+        #         continue
+        #
+        #     while True:
+        #         raw_byte = conn.recv(1)
+        #         print "raw_byte", raw_byte
+        #         if struct.unpack("!B", raw_byte) != 2:
+        #             continue
+        #         else:
+        #             data = conn.recv(1)
+        #     data_len = conn.recv(4)
+        #     print
+        #     if data_len == "":
+        #         break
+        #     print "[%s] Raw data_len: %r" % (self.__class__.__name__, data_len)
+        #     length = struct.unpack('!I', data_len)[0]
+        #     print "[%s] Int data_len: %d" % (self.__class__.__name__, length)
+        #     data = conn.recv(length)
+        #     print "[%s] recieved data %s" % (self.__class__.__name__, data)
+        #     q.put(data)
+
+        print "[%s] disconnected to Spark" % self.__class__.__name__
 
 
 
