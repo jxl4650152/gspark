@@ -1,0 +1,372 @@
+
+#body{
+    fill-opacity: 1;
+    position:relative;
+    z-index: 10;
+}
+
+
+.nav-div{
+    transition: all 500ms ease;
+    width:220px;
+    transform: translate3d(-220px, 0, 0);
+    z-index: 20;
+}
+.nav-div-actived {
+    transform: translate3d(0, 0, 1px);
+
+}
+
+
+
+
+.menu-ul{
+    padding: 0;
+    list-style: none;
+}
+
+.menu-ul li{
+    border-bottom: 1px solid #276289;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 45px;
+    list-style: none;
+
+}
+
+.menu-ul li:hover{
+    background-color: white;
+    transition: linear all 0.4s;
+
+}
+
+.menu-ul li a:hover{
+    color: black;
+    transition: linear all;
+
+}
+
+.menu-ul li a:hover ul{
+    display: block;
+
+}
+
+.menu-ul li a {
+    text-decoration: none;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 50px;
+    padding-right: 50px;
+    color: black;
+    font-size: 13pt;
+}
+
+.toggle-button{
+    height: 30px;
+    transition: all 500ms ease;
+    transform: translate3d(0, 0, 0);
+}
+
+.toggle-button-actived{
+    transition: all 500ms ease;
+    transform: translate3d(220px, 0, 0);
+}
+
+.toggle-button span{
+    display:block;
+    width:30px;
+    height:5px;
+    margin: 5px;
+    background: #395eb7;
+}
+.job-div{
+    position: absolute;
+    left:0;
+    top: 0;
+    width: 100%;
+}
+
+.main-div{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        height: 520px;
+        overflow-y: scroll;
+    }
+
+    .cloud-div{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 250px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .drivers-div{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+        align-content: space-around;
+        width: 240px;
+        height: 150px;
+        border: 1px solid green;
+    }
+
+    .driver-div{
+        width: 200px;
+        height: 70px;
+        border: 1px solid green;
+        border-radius: 5px;
+    }
+
+    .workers-div{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-content: start;
+
+        width: 210px;
+        padding: 15px;
+
+        border: 1px solid green;
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .worker-div{
+        display: flex;
+        flex-direction: column;
+        align-items:center;
+        margin-top: 15px;
+        padding-bottom: 10px;
+        width: 80px;
+        border: 1px solid green;
+        border-radius: 5px;
+    }
+
+    .worker-div-active{
+    }
+
+    .worker-div-active  .executor-div{
+        margin-top: 4px;
+        margin-bottom: -25px;
+    }
+
+    .worker-div-active :last-child{
+        margin-bottom: 0;
+    }
+
+    .executor-div{
+        display:flex;
+        align-items: center;
+        justify-items: center;
+        width: 68px;
+        height: 25px;
+        border: 1px solid #597b54;
+        margin-top: 15px;
+        background-color: rgb(102, 189, 254);
+        opacity: 1;
+        transition: all 0.3s ease-out;
+        border-radius: 5px;
+
+
+    }
+
+    .finNum{
+        padding-left: 15px;
+        z-index: 40;
+    }
+
+    .executor-div .execProgress{
+        position: absolute;
+        height: 24px;
+        width: 20px;
+        background-color: #3ded5f;
+    }
+
+
+
+    .main-div > svg{
+        width: 100%;
+        height: 520px;
+        position: absolute;
+        pointer-events: none;
+        left: 0;
+
+    }
+
+    .main-div > svg > rect{
+    position: relative;
+    }
+
+
+
+.worker-div path{
+  fill: green;
+  stroke-width: 5px;
+  stroke: green;
+}
+
+.worker-div circle{
+  position: relative;
+  fill: none;
+  stroke-width: 1px;
+  stroke: green;
+}
+
+.worker-div .executor-tag-div{
+    background-color: white;
+}
+
+.animate-path{
+    stroke: #bb6113;
+    stroke-opacity: 0.6;
+    fill-opacity: 0;
+    visibility: hidden;
+}
+
+.animate-circle{
+    stroke: #9b9798;
+    fill: green;
+}
+
+#button-div{
+    display:inline-block;
+    width: 15%
+}
+
+.start-button{
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left-width: 13px;
+    border-right-width: 13px;
+    border-top-width: 10px;
+    border-bottom-width: 10px;
+    border-style: solid;
+    border-bottom-color: #ffffff;
+    border-left-color: #1d8f57;
+    border-top-color: #ffffff;
+    border-right-color: #ffffff;
+    margin-left: 80%;
+}
+
+.stop-button{
+    display: inline-block;
+    width: 6px;
+    height: 20px;
+    border-width: 6px;
+    border-left-style: solid;
+    border-right-style: solid;
+    border-left-color: #1d8f57;
+    border-right-color: #1d8f57;
+    margin-left: 80%;
+}
+
+#progress-div{
+    height: 30px;
+    padding-top: 10px;
+    box-shadow: 0 -3px 22px  #bec0be;
+    margin-top: 10px;
+    margin-left: 150px;
+    margin-right: 150px;
+    border-bottom-color: #9b9798;
+}
+
+.table-div{
+    margin-bottom: 20px;
+}
+
+
+#time-line{
+    display: inline-block;
+    box-shadow: 0 -3px 22px  #bec0be;
+
+    width:  70%;
+}
+
+.table-title{
+    border-bottom: 1px solid #c5cacb;
+
+}
+
+.table-title >p{
+    font-size: 25px;
+    font-family: "Bell MT";
+}
+
+
+table td{
+    text-align: center;
+}
+
+td{
+
+    height: 20px;
+    border-color: #0d17154d;
+}
+th{
+    width: 100px;
+    height: 20px;
+    border-bottom-color: #454f4c;
+    border-right-color: #0d17154d;
+    color: #1d8f57;
+}
+
+th.job-id, th.stage-id, th.shuffle-id{
+    width: 80px;
+}
+
+th.submit-time, th.complete-time, th.time-cost{
+    width: 180px;
+}
+
+th.stage-num, th.task-num{
+    width: 100px;
+}
+
+th.stage-name{
+    width: 200px;
+}
+th.trans-size{
+    width: 200px;
+}
+th.stage-list{
+    width: 200px;
+}
+
+th.status{
+    width: 200px;
+}
+
+table{
+    margin-left: 10px;
+    margin-top: 10px;
+    border-collapse: collapse;
+    border-color: #0d17154d;
+    table-layout: fixed;
+}
+
+.td-status{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin: 6px;
+    /*border: 1px #3ded5f solid;*/
+    border-radius: 7px;
+    /*background-image: linear-gradient(to right, #1d8f57, #1d8f57 10%, #48e913 10%, #48e913 20%, #9b9798 20%, #9b9798);*/
+}
+
+.shuffle-summary{
+    margin-left: 10px;
+    margin-top: 10px;
+}
+.stage-summary{
+    margin-left: 10px;
+    margin-top: 10px;
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>G-Spark</title>
+    <link rel="stylesheet" href="{{url_for("static", filename = "applications.css" )}}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'common.css' )}}" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
+
+</head>
+<body>
+    <div class="Top-bar">
+        <h1>G-Spark</h1>
+    </div>
+    <div class="body">
+        <nav>
+            <ul class="menu-ul">
+                <li class="menu"><a href="/gspark/intro">简 介</a></li>
+                <li class="memu-li"><a href="/gspark/clusters/">集 群</a></li>
+                <li class="memu-li"><a  href="#">作 业</a></li>
+            </ul>
+
+        </nav>
+
+        <div id="intro-div">
+            <ul class="running-app">
+                <li class="text">运行中的应用</li>
+                <ul class="running-app-list">
+                    {% for r_app in r_apps %}
+                    <li><a href="/gspark/jobs/runningjobs/{{ r_app }}">{{ r_app }}</a></li>
+                    {% endfor %}
+                </ul>
+                </ul>
+            </ul>
+            <ul class="histroy-app">
+                <li class="text">历史应用</li>
+                <ul class="history-app-list">
+                    {% for h_app in h_apps %}
+                    <li><a href="/gspark/jobs/historyjobs/{{ h_app }}">{{ h_app }}</a></li>
+                    {% endfor %}
+                </ul>
+            </ul>
+        </div>
+    </div>
+
+
+{#<script>#}
+{#    var webSocket = io("ws://192.168.7.64:2000/apps");#}
+{#    webSocket.on('connect', function () {#}
+{#        console.log("connect")#}
+{#    });#}
+{##}
+{#    webSocket.on('new_app', function (data) {#}
+{#        var appId = data;#}
+{#        console.log(appId);#}
+{#        var runningList = document.getElementsByClassName("running-app-list")[0];#}
+{#        var newLi = document.createElement("li");#}
+{#        var newA = document.createElement("a");#}
+{#        newA.href = `/gspark/jobs/runningjobs/${appId}`;#}
+{#        newA.innerHTML = appId;#}
+{#        newLi.appendChild(newA);#}
+{#        runningList.appendChild(newLi);#}
+{#    });#}
+{##}
+{#    webSocket.on('app_end', function (data) {#}
+{#        var appId = data;#}
+{#        console.log(appId);#}
+{#        var historyList = document.getElementsByClassName("history-app-list")[0];#}
+{#        var runningList = document.getElementsByClassName("running-app-list")[0];#}
+{#        for(var i = 0; i < runningList.children.length; i++){#}
+{#            if(runningList.children[i].lastElementChild.innerHTML === data){#}
+{#                runningList.children[i].remove();#}
+{#            }#}
+{#        }#}
+{#        var newLi = document.createElement("li");#}
+{#        var newA = document.createElement("a");#}
+{#        newA.href = `/gspark/jobs/historyjobs/${appId}`;#}
+{#        newA.innerHTML = appId;#}
+{#        newLi.appendChild(newA);#}
+{#        historyList.appendChild(newLi);#}
+{#    })#}
+{#</script>#}
+
+
+</body>
+</html>

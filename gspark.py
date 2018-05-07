@@ -1,40 +1,35 @@
 # -*- coding: UTF-8 -*-
-import eventlet
-from eventlet.green import socket
+from daemon_thread import daemon_thread
+from eventlet.semaphore import Semaphore
 from flask import *
 from flask_socketio import *
 import json
-import random
-import time
-import threading
-import struct
-import Queue
+import redis.connection
 
 
+# flask version: 0.12.2
+# when to change the flask version, structure of this file
+# should be adapted correspondingly
 
 
-
-app = Flask(__name__)
+app = Flask("gspark")
 socketio = SocketIO(app)
 
+# Dict to maintain living web client info
+conn_list = {}
+
+try:
+    r = redis.StrictRedis(host="192.168.7.41", port=6380)
+    daemon = daemon_thread(r)
+    daemon.daemon = True
+    daemon.start()
+except Exception as e:
+    print "Exception occured when to connect redis:", e
 
 
-historyJobs = []
-runningJobs = []
-CloudWidth = 280
-rand = []
-thread_running_flag = 0
-job_rooms = set()
-rooms_count = {}
-connect_flag = False
-q = Queue.Queue(10)
 
-
+# web route handlers
 @app.route('/')
-def hello_world():
-    return render_template("introduction.html")
-
-
 @app.route('/gspark/')
 @app.route('/gspark/intro/')
 def index():
@@ -46,155 +41,79 @@ def clusters():
     return render_template("clusters.html")
 
 
-@app.route('/gspark/jobs/')
-def jobs():
-    global historyJobs, runningJobs
-    historyJobs = [Job(1, "Job15563"), Job(2, "Job16798")]
-    runningJobs = [Job(1, "Job25863"), Job(2, "Job26998")]
-    return render_template("jobs.html", HistoryJobs=historyJobs, RunningJobs=runningJobs)
+@app.route('/gspark/applications/')
+def applications():
+    running_apps = r.lrange("run_apps", 0, -1)
+    history_apps = r.lrange("fin_apps", 0, -1)
+    print running_apps
+    return render_template("applications.html", r_apps=running_apps, h_apps=history_apps)
 
 
 @app.route('/gspark/jobs/runningjobs/<jobID>')
 def runningjob(jobID):
-    global historyJobs, runningJobs, CloudWidth
-    job = getJob(jobID)
-    return render_template("job.html", HistoryJobs=historyJobs, RunningJobs=runningJobs,
-                           jobID=jobID,
-                           job=job,
-                           CloudWidth=CloudWidth)
+    return render_template("job2.html", jobID=jobID)
 
 
 @app.route('/gspark/jobs/historyjobs/<jobID>')
 def historyjob(jobID):
-    global historyJobs, runningJobs
-    return render_template("job.html", HistoryJobs=historyJobs, RunningJobs=runningJobs, jobID=jobID)
-
-@socketio.on('connect')
-def connect_handler():
-
-    # def random_event(io, sid):
-    #     lock = threading.Lock()
-    #     cond = threading.Condition(lock=lock)
-    #
-    #     with app.test_request_context():
-    #         while True:
-    #             cond.acquire()
-    #             cond.wait(timeout=4)
-    #             print "thread running", sid
-    #             event1 = json.load(open(unicode("/home/LAB/jiaxl/gsparkdata-exch\\task_launch_to_siteDriver.json", "utf8")))
-    #             event2 = json.load(open(unicode("/home/LAB/jiaxl/gsparkdata-exch\outter_shuffle.json", "utf8")))
-    #             event3 = json.load(open(unicode("/home/LAB/jiaxl/gsparkdata-exch\\task_launch_to_executor.json", "utf8")))
-    #             event4 = json.load(open(unicode("/home/LAB/jiaxl/gsparkdata-exch\inner_shuffle.json", "utf8")))
-    #
-    #             res1 = eventConvert(event1)
-    #             res2 = eventConvert(event2)
-    #             res3 = eventConvert(event3)
-    #             res4 = eventConvert(event4)
-    #
-    #             event_list = [res1, res2, res3, res4]
-    #
-    #             num = random.randint(0, 3)
-    #             res = event_list[num]
-    #             print res
-    #             io.emit(res["event"], res["data"], room=sid)
-    #
-    #             cond.wait(timeout=4)
-    #             cond.release()
-    print "Client  from ", request.remote_addr, " connected with sid ", request.sid
+    return render_template("job2.html", jobID=jobID)
 
 
-@socketio.on('recieved')
-def connect_handler(data):
-    print "recieved data:", data, type(data)
-    global rand
-    stage0 = "/home/LAB/jiaxl/gspark/data-exch/task_launch_to_siteDriver.json"
-    stage1 = "/home/LAB/jiaxl/gspark/data-exch/task_launch_to_executor"
-    stage2 = "/home/LAB/jiaxl/gspark/data-exch/inner_shuffle"
-    stage3 = "/home/LAB/jiaxl/gspark/data-exch/outter_shuffle"
-    event = {}
-
-    if data["stage"] == 0:
-        event = json.load(open(stage0))
-
-    elif data["stage"] == 1:
-        time.sleep(1)
-        stage1 = stage1 + str(data["count"]) + ".json"
-        event = json.load(open(stage1))
-
-    elif data["stage"] == 2:
-        time.sleep(1)
-        while len(rand) < 7:
-            i = random.randint(0, 5)
-            if i not in rand:
-                rand.append(i)
-                stage2 = stage2 + str(i) + ".json"
-                event = json.load(open(stage2))
-                break
-
-
-    elif data["stage"] == 3:
-        time.sleep(2)
-        stage3 = stage3 + str(data["count"]) + ".json"
-        event = json.load(open(stage3))
-
-    res = eventConvert(event)
-
-    socketio.emit(res["event"], res["data"], room=request.sid)
-    print "recieved reply to", request.sid
-    print " "
-
-
+# WebSocket route handlers
+# for every web client, two coroutines(play_thread, replay_thread)
+# and some data structures are created
 @socketio.on('join')
 def on_join(data):
-    global thread_running_flag, job_rooms, rooms_count, connect_flag
-    room = data['room']
-    join_room(room)
+    print "new client connecting"
+    sema1 = Semaphore(0)
+    sema2 = Semaphore(0)
+    conn_list[request.sid] = {}
+    conn_list[request.sid]["job"] = data["job"]
+    conn_list[request.sid]["curr_p"] = 1
+    conn_list[request.sid]["client_stop_flag"] = False
+    conn_list[request.sid]["play_stop_flag"] = False
+    conn_list[request.sid]["exit_flag"] = False
+    conn_list[request.sid]["play_sema"] = sema1
+    conn_list[request.sid]["replay_sema"] = sema2
 
-    if room in rooms_count:
-        rooms_count[room] += 1
-    else:
-        rooms_count[room] = 1
-        print "New room created:  ", room
-    print "client join room %s" % room
-    if not job_rooms:
-        job_rooms.add(room)
-        socketio.start_background_task(target=bg_thread)
-        # socketio.start_background_task(target=get_data)
-        event = threading.Event()
-        event.clear()
-        # consu_thread(event).start()
-        produ_thread(event).start()
-        thread_running_flag = 1
-        # # thread.start_new_thread(get_data, args=())
-        #
-        # if room not in thread_running:
-        #     thread_running.append(room)
-        #     print "start sending thread..."
-        #     my_pool.spawn(send_func, room)
-        #     my_pool.spawn(get_data)
-        #     my_pool.waitall()
-        #             # thread.start_new_thread(send_func, args=(room,))
+    pl = socketio.start_background_task(play_thread, request.sid)
+    repl = socketio.start_background_task(replay_thread, request.sid)
+    conn_list[request.sid]["pl"] = pl
+    conn_list[request.sid]["repl"] = repl
 
-    if job_rooms and (not connect_flag):
-        event = threading.Event()
-        event.clear()
-        # consu_thread(event).start()
-        produ_thread(event).start()
-        thread_running_flag = 1
+
+
+
+@socketio.on('replay')
+def replay_handler(data):
+    conn_list[request.sid]["new_p"] = int(data["point"])
+    conn_list[request.sid]["play_stop_flag"] = True
+
+
+@socketio.on('stopped')
+def stopped_handler(data):
+    conn_list[request.sid]["client_stop_flag"] = True
+    conn_list[request.sid]["curr_p"] = int(data)
+
+
+# replay start event
+@socketio.on('clearstopped')
+def clearstopped_handler():
+    print "recieve stop clear event"
+    conn_list[request.sid]["client_stop_flag"] = False
+
 
 @socketio.on('disconnect')
 def connect_handler():
-    global rooms_count, job_rooms
-    print "leaving..."
-    room = rooms(sid=request.sid, namespace="/")[0]
-    print rooms(sid=request.sid, namespace="/")
-    leave_room(room)
-    rooms_count[room] -= 1
-    print "job_rooms", rooms_count
-    if rooms_count[room] == 0:
-        job_rooms.remove(room)
-        print "job_rooms", job_rooms
 
+    if request.sid in conn_list.keys():
+        conn_list[request.sid]["exit_flag"] = True
+        socketio.sleep(0)
+        conn_list[request.sid]["pl"].join()
+        conn_list[request.sid]["repl"].join()
+        socketio.sleep(0)
+        del conn_list[request.sid]
+        print "client leaving..."
 
 
 @socketio.on('close')
@@ -202,6 +121,7 @@ def connect_handler():
     print "close"
 
 
+# deprecated api, not used
 @socketio.on('ToSiteDriver')
 def test_handler():
     #print request.sid
@@ -209,6 +129,8 @@ def test_handler():
     res = eventConvert(event)
     socketio.emit(res["event"], res["data"], room=request.sid)
 
+
+# deprecated api, not used
 @socketio.on('OuterShuffle')
 def test_handler():
     #print request.sid
@@ -216,6 +138,8 @@ def test_handler():
     res = eventConvert(event)
     socketio.emit(res["event"], res["data"], room=request.sid)
 
+
+# deprecated api, not used
 @socketio.on('ToExecutor')
 def test_handler():
     #print request.sid
@@ -223,6 +147,8 @@ def test_handler():
     res = eventConvert(event)
     socketio.emit(res["event"], res["data"], room=request.sid)
 
+
+# deprecated api, not used
 @socketio.on('InnerShuffle')
 def test_handler():
     #print request.sid
@@ -230,12 +156,8 @@ def test_handler():
     res = eventConvert(event)
     socketio.emit(res["event"], res["data"], room=request.sid)
 
-def getJob(id):
-    clu_list = json.load(open("/home/LAB/jiaxl/gspark/data-exch/clusters_defination.json"))
-    job = Job(clouds=clu_list)
-    return job
 
-
+# deprecated api, not used
 def eventConvert(event):
     res = {"event": "", "data": {}}
     if event["Event"] == "SparkListenerInnerShuffle":
@@ -283,188 +205,77 @@ def eventConvert(event):
         return res
 
 
-def send_func(room):
-    # t = int(round(time.time()))
-    # while True:
-    #     now = int(round(time.time()))
-    #     if (now - t) > 3:
-    #         t = now
 
-    print "send thread running, room", room
+
+# coroutine(not thread) to handle web play
+def play_thread(req_id):
+    job = conn_list[req_id]["job"]
+    i = conn_list[req_id]["curr_p"]
+
     while True:
-        socketio.sleep(1)
-        socketio.emit("hello", data, room=room)
-
-    # while True:
-    #     # q_event.wait()
-    #
-    #     socketio.emit("hello", "data", room=room)
-    #     print "sending complete"
-    #     # q_event.clear()
-    #     # else:
-    #     #     continue
-
-
-# def get_data():
-#     print "get data thread running in thread", threading.currentThread()
-#     while True:
-#         msg.append("hello")
-#         socketio.sleep(0)
-
-
-def bg_thread():
-    while True:
-        if q.empty():
-            socketio.sleep(0)
-            continue
+        socketio.sleep(0)
+        if conn_list[req_id]["exit_flag"]:
+            conn_list[req_id]["replay_sema"].release()
+            print "play thread exit"
+            break
+        elif conn_list[req_id]["play_stop_flag"]:
+            conn_list[req_id]["curr_p"] = i - 1
+            conn_list[req_id]["replay_sema"].release()
+            conn_list[req_id]["play_sema"].acquire()
+            i = conn_list[req_id]["curr_p"]
+        elif conn_list[req_id]["client_stop_flag"]:
+            print "play thread stop at", conn_list[req_id]["curr_p"]
+            i = conn_list[req_id]["curr_p"] + 1
+            socketio.sleep(0.01)
         else:
-            msg = q.get()
-            socketio.emit("hello", msg, room="1")
-            socketio.sleep(0)
+            msg = r.lindex(job, -i)
+            if not msg:
+                socketio.sleep(0.01)
+                print "null msg at ", i
+                continue
+            res = '{"time": "%s", "data": %s}' % (i, msg)
+            print "play", i
+            socketio.emit("hello", res, room=req_id)
+            i = i + 1
+            socketio.sleep(0.07)
 
 
-class consu_thread(threading.Thread):
-    def __init__(self, event):
-        super(consu_thread, self).__init__()
-        self.event = event
+# coroutine(not thread) to handle web replay
+def replay_thread(req_id):
+    while True:
+        print "Replay thread waiting..."
+        socketio.sleep(0)
+        conn_list[req_id]["replay_sema"].acquire()
 
-    def run(self):
-        print "consumer thread in", threading.currentThread()
-        print "socketio is", socketio
-        while True:
-            if q.empty():
-                print "queue is empty"
-                self.event.clear()
-                self.event.wait()
+        if conn_list[req_id]["exit_flag"]:
+            conn_list[req_id]["play_sema"].release()
+            print "replay thread exit"
+            return
+        else:
+            job = conn_list[req_id]["job"]
+            i = conn_list[req_id]["curr_p"]
+            i_new = conn_list[req_id]["new_p"]
+            s = 0
+            if i_new > i:
+                s = i + 1
             else:
-                data = q.get()
-                print "consumer get data", data
-                send(data)
+                s = 1
+                socketio.emit("clear", room=req_id)
+                socketio.sleep(0)
+
+            while s < i_new + 1:
+                msg = r.lindex(job, -s)
+                socketio.emit("replay", msg, room=req_id)
+                s = s + 1
+                socketio.sleep(0)
+            conn_list[req_id]["curr_p"] = i_new + 1
+            socketio.sleep(0)
+            conn_list[req_id]["play_stop_flag"] = False
+            conn_list[req_id]["play_sema"].release()
 
 
-
-class produ_thread(threading.Thread):
-    def __init__(self, event):
-        super(produ_thread, self).__init__()
-        self.event = event
-
-
-    def run(self):
-        self.conn()
-
-
-    def conn(self):
-        global connect_flag, job_rooms
-        print "[%s] connecting to Spark" % self.__class__.__name__
-        conn = socket.create_connection(("192.168.7.41", 6666), 1000)
-        connect_flag = True
-        print "[%s] connected to Spark" % self.__class__.__name__
-
-
-
-
-        while True:
-            if not job_rooms:
-                print "[%s] No receiver" % self.__class__.__name__
-                conn.close()
-                break
-            close_flag = False
-            while not close_flag and job_rooms:
-                raw_byte = conn.recv(1)
-                if raw_byte == '':
-                    close_flag = True
-                    connect_flag = False
-                    continue
-                elif raw_byte != '{':
-                    continue
-                else:
-                    flag = 1
-                    s = '{'
-                    while flag != 0:
-                        s_next = conn.recv(1)
-                        if s_next == '':
-                            connect_flag = False
-                            close_flag = True
-                            break
-                        s += s_next
-                        if s_next == '}':
-                            flag -= 1
-                        if s_next == '{':
-                            flag += 1
-                    if flag == 0:
-
-                        q.put(s)
-
-
-
-        # while True:
-        #     if not job_rooms:
-        #         print "[%s] No receiver" % self.__class__.__name__
-        #         continue
-        #
-        #     while True:
-        #         raw_byte = conn.recv(1)
-        #         print "raw_byte", raw_byte
-        #         if struct.unpack("!B", raw_byte) != 2:
-        #             continue
-        #         else:
-        #             data = conn.recv(1)
-        #     data_len = conn.recv(4)
-        #     print
-        #     if data_len == "":
-        #         break
-        #     print "[%s] Raw data_len: %r" % (self.__class__.__name__, data_len)
-        #     length = struct.unpack('!I', data_len)[0]
-        #     print "[%s] Int data_len: %d" % (self.__class__.__name__, length)
-        #     data = conn.recv(length)
-        #     print "[%s] recieved data %s" % (self.__class__.__name__, data)
-        #     q.put(data)
-
-        print "[%s] disconnected to Spark" % self.__class__.__name__
-
-
-
-
-
-def send(data):
-    print "sending data..."
-    socketio.emit("hello", data, room="1")
-
-class Job:
-    id = 0
-    name = ""
-    clouds = []
-    progress = 40
-
-    def __init__(self, id=0, name="", clouds=[]):
-        self.id = id
-        self.name = name
-        self.clouds = clouds
-
-
-test_data = [
-        {"event": "GS", "data": ["cluster1-SiteDriver0", "cluster2-SiteDriver1",  "cluster3-SiteDriver2"]},
-        {"event": "SS", "data": {"site":"cluster2-SiteDriver1", "site_array": ["cluster1-SiteDriver0", "cluster3-SiteDriver2"]}},
-        {"event": "SS", "data": {"site":"cluster3-SiteDriver2", "site_array": ["cluster1-SiteDriver0", "cluster3-SiteDriver2","cluster4-SiteDriver3", "cluster6-SiteDriver5"]}},
-        {"event": "GS", "data": ["cluster2-SiteDriver1", "cluster3-SiteDriver2"]},
-        {"event": "SE", "data": {"site":"cluster1-SiteDriver0", "executors": ["cluster1-executor1","cluster1-executor2","cluster1-executor4"]}},
-        {"event": "SE", "data": {"site":"cluster2-SiteDriver1", "executors": ["cluster2-executor1","cluster2-executor2","cluster2-executor3"]}},
-        {"event": "SE", "data": {"site":"cluster3-SiteDriver2", "executors": ["cluster3-executor1","cluster3-executor2","cluster3-executor4","cluster3-executor8","cluster3-executor9"]}},
-        {"event": "EE", "data": {"exe":"cluster1-executor2", "executors": ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6"]}},
-        {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
-        {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},
-        ]
-
-test_data1 = [
-        {"event": "EE", "data": {"exe":"cluster1-executor2", "executors": ["cluster1-executor0","cluster1-executor1","cluster1-executor3","cluster1-executor4","cluster1-executor5","cluster1-executor6"]}},
-        {"event": "EE", "data": {"exe":"cluster2-executor3", "executors": ["cluster2-executor0","cluster2-executor1","cluster2-executor2","cluster2-executor4"]}},
-        {"event": "EE", "data": {"exe":"cluster3-executor6", "executors": ["cluster3-executor0","cluster3-executor4","cluster3-executor8","cluster3-executor7"]}},
-        ]
-
-
-
-
-
+if __name__ == "__main__":
+    app.run("0.0.0.0", 2000)
 
 
 

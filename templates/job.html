@@ -51,7 +51,8 @@
         <span></span>
         <span></span>
     </div>
-    <p id="id">作业编号：{{ jobID }} <input type="button" value="collapse" onclick="foldAll()">
+    <p id="id">作业编号：{{ jobID }}
+        <input type="button" value="collapse" onclick="sendReplay()">
         <input type="button" value="ToSiteDriver" onclick="ToSiteDriver()">
         <input type="button" value="OuterShuffle" onclick="OuterShuffle()">
         <input type="button" value="ToExecutor" onclick="ToExecutor()">
@@ -137,12 +138,13 @@
     </svg><!--out-cotainner-->
     </div>
     <div id="progress-div">
+        <input id="time-line" type="range" min="0" max="20" step="1" onchange="sendReplay(this.value)">
         <svg   class="progress-svg"  width="100%" height="80">
-            <text class="progress-text" y="55" x="15">进度: 0% </text>
-            <rect class="progress-bar" x="100" y="40" rx="15"  ry="15" width="1000" height="15"
+            <text class="progress-text" y="15" x="15">进度: 0% </text>
+            <rect class="progress-bar" x="100" y="0" rx="15"  ry="15" width="1000" height="15"
                 style="fill:blue;fill-opacity:0.1;stroke:blue; stroke-opacity:0.9">
             </rect>
-            <rect class="progress" x="100" y="40" rx="15"  ry="15" width="0" height="15"
+            <rect class="progress" x="100" y="0" rx="15"  ry="15" width="0" height="15"
                 style="fill:green; stroke:blue; stroke-opacity:0.9">
             </rect>
         </svg>
@@ -614,7 +616,7 @@
             return [pathClass, circleClass];
         }
 
-        var webSocket = io("ws://192.168.7.64:2000");
+        var webSocket = io("ws://192.168.7.64:2000/app");
         var stage = 0;
         var innerShuffle_count = 1;
         var outerShuffle_count = 1;
@@ -622,11 +624,25 @@
 
         webSocket.on("connect", function () {
             console.log("connected");
-            webSocket.emit("join", {"room": "{{ jobID }}"})
+            webSocket.emit("join", {"job": "{{ jobID }}"})
 
         });
 
         webSocket.on("hello", function (data) {
+            console.log(data);
+            var timeLine = document.getElementById("time-line");
+            var obj = JSON.parse(data);
+            timeLine.value = obj.data;
+            //webSocket.emit("recieved", {stage: stage});
+
+        });
+
+        function sendReplay(val) {
+            webSocket.emit("replay", {"point": val})
+
+        }
+
+        webSocket.on("replay", function (data) {
             console.log(data);
             //webSocket.emit("recieved", {stage: stage});
 

@@ -10,12 +10,13 @@ body {
 .Top-bar{
     padding-top: 20px;
     padding-left: 30px;
-    background-color:#806af5;
-    height: 65px;
+    border-bottom: 1px darkgray solid;
+    background: linear-gradient(to bottom, white, #f8f8f8 30%, #e7e5e5);
+    height: 55px;
 }
 
 h1 {
-    color: white;
+    color: #5767a8;
 }
 
 nav ul li a {

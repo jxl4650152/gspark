@@ -1,0 +1,74 @@
+
+#intro-div{
+    display: inline-block;
+}
+
+.body{
+    display: flex;
+}
+
+nav ul {
+    padding: 0;
+    list-style: none;
+}
+
+#intro-div > ul{
+    list-style: none;
+}
+
+nav ul li{
+    border-bottom: 1px solid #367eae;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 45px;
+    list-style: none;
+}
+
+nav ul li:hover{
+    background-color: white;
+    transition: linear all 0.4s;
+
+}
+
+nav ul li a:hover{
+    color: black;
+    transition: linear all;
+
+}
+
+nav ul li a:hover ul{
+    display: block;
+
+}
+
+
+.running-app{
+    padding-top: 40px;
+    padding-left: 40px;
+}
+
+.histroy-app{
+    padding-top: 40px;
+    padding-left: 40px;
+}
+
+
+
+br{
+    width: 100%;
+}
+
+td{
+    width: 100px;
+    height: 20px;
+}
+th{
+    width: 100px;
+    height: 20px;
+}
+table{
+    margin-left: 20px;
+    margin-top: 50px;
+    border-collapse: collapse;
+}

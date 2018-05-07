@@ -143,7 +143,7 @@
     font-size: 12pt;
     padding-bottom: 10px;
     box-shadow: 0 5px 5px  #afb4af;
-    display: none;
+
 }
 
 #clouds-div{
@@ -223,6 +223,11 @@ circle{
     fill: green;
 }
 
+#time-line{
+    display: inline-block;
+    margin-left: 100px;
+    width:  985px;
+}
 
 .table-div{
     display: flex;

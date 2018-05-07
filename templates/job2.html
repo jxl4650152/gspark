@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>G-Spark</title>
+    <link rel="stylesheet" href="{{url_for("static", filename = "applicationv0.1.css" )}}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'common.css' )}}" type="text/css">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
+
+</head>
+<body>
+<div class="Top-bar">
+    <h1>G-Spark</h1>
+</div>
+<div id="body">
+    <div class="nav-div">
+        <nav id="navigator">
+
+        <ul class="menu-ul">
+            <li class="menu"><a href="/gspark/intro">简 介</a></li>
+            <li class="memu-li"><a href="/gspark/clusters/">集 群</a></li>
+            <li class="memu-li"><a  href="/gspark/applications/">作 业</a></li>
+        </ul>
+    </nav>
+    </div>
+    <div class="job-div" >
+    <div class="toggle-button" onclick="toggle()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <div class="main-div">
+        <svg version="1.1"   width="1000" height="1000" xmlns="http://www.w3.org/2000/svg" id="bg-svg">
+
+        </svg>
+        <div class="cloud-div" id="cloud-1">
+            <div class="drivers-div">
+            </div>
+            <div class="workers-div">
+            </div>
+        </div>
+
+        <div class="cloud-div">
+            <div class="drivers-div">
+            </div>
+            <div class="workers-div">
+                <div class="worker-div" id="worker2" onclick="collapse(event)">
+                    <div class="executor-div" >
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                </div>
+                <div class="worker-div" onclick="collapse(event)">
+                    <div class="executor-div">
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                </div>
+                <div class="worker-div">
+                    <div class="executor-div">
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                    <div class="executor-div">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div>
+        <div id="start-button-div">
+
+        </div>
+
+        <div id="progress-div">
+            <div id="button-div">
+                <div class="stop-button" onclick="startToggle()">
+                </div>
+            </div>
+            <input id="time-line" type="range" min="0" max="200" step="1"  onchange="sendReplay(this.value)" oninput="output(this.value)">
+            <span id="time-line-value"></span>
+        </div>
+    </div>
+    <div class="table-title">
+        <p class="stage-summary">Job 统计</p>
+    </div>
+    <div class="table-div" id="job-info">
+        <table border="1" id="jobs-table">
+            <thead>
+                <tr>
+                    <th class="job-id">jobID</th>
+                    <th class="submit-time">提交时间</th>
+                    <th class="complete-time">完成时间</th>
+                    <th class="time-cost">用时</th>
+                    <th class="stage-list">stagesList</th>
+                    <th class="stage-num">numOfStages</th>
+                    <th class="status">status</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+     <div class="table-title">
+        <p class="stage-summary">Stage 统计</p>
+    </div>
+    <div class="table-div" id="stage-info">
+        <table border="1" id="stages-table">
+            <thead>
+                <tr>
+                    <th class="stage-id">stageID</th>
+                    <th class="submit-time">提交时间</th>
+                    <th class="complete-time">完成时间</th>
+                    <th class="time-cost">用时</th>
+                    <th class="stage-name">stageName</th>
+                    <th class="task-num">numOfTasks</th>
+                    <th class="status">status</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+    <div class="table-title">
+        <p class="shuffle-summary">Shuffle 统计</p>
+    </div>
+    <div class="table-div" id="shuffle-info">
+        <table border="1" id="shuffles-table">
+            <thead>
+                <tr>
+                    <th class="shuffle-id">shuffleID</th>
+                    <th class="trans-size">数据传输量</th>
+                    <th class="time-cost">用时</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+<script>
+{#    addExecutor("testname","localhost");#}
+
+        let isFold = 0;
+        let jobSubTime = [];
+        let isStopped = 0;
+        function toggle() {
+        document.getElementsByClassName("nav-div")[0].classList.toggle("nav-div-actived");
+        document.getElementsByClassName("toggle-button")[0].classList.toggle("toggle-button-actived");
+    }
+        function startToggle() {
+            var timeLine = document.getElementById("time-line");
+            if (isStopped === 0) {
+                document.getElementsByClassName("stop-button")[0].className = "start-button";
+
+                isStopped = 1;
+            } else {
+                document.getElementsByClassName("start-button")[0].className = "stop-button";
+                webSocket.emit("clearstopped");
+                isStopped = 0;
+
+            }
+        }
+        function output(d) {
+            document.getElementById("time-line-value").innerHTML = d;
+        }
+
+        function ToSiteDriver() {
+            webSocket.emit("ToSiteDriver");
+        }
+        function OuterShuffle() {
+            webSocket.emit("OuterShuffle");
+        }
+        function ToExecutor() {
+            webSocket.emit("ToExecutor");
+        }
+        function InnerShuffle() {
+            webSocket.emit("InnerShuffle");
+        }
+
+
+        /**
+         * get element two elements' width and height, get offset-x and offset-y of the
+         * @param ele1 HTMLelement
+         * @param ele2  HTMLelement
+         * @returns {[number,number,number,number,number,number]} [width1, height1, x, y, width2, height2]
+         */
+        function getLoc(ele1, ele2){
+                    var loc = [0, 0, 0, 0];
+
+                    var ele1Rect = ele1.getBoundingClientRect();
+                    var ele2Rect = ele2.getBoundingClientRect();
+
+                    loc[0] = ele1Rect.width;
+                    loc[1] = ele1Rect.height;
+                    loc[2] = ele2Rect.left - ele1Rect.left;
+                    loc[3] = ele2Rect.top - ele1Rect.top;
+                    loc[4] = ele2Rect.width;
+                    loc[5] = ele2Rect.height;
+
+                    return loc;
+                }
+        function getColumn(exe, cloudId='cloud-1') {
+            var cloud = document.getElementById(cloudId);
+            var pos = getLoc(cloud, exe);
+
+            if(pos[2] < pos[4]){
+                return "left"
+            }else {
+                return "right"
+            }
+        }
+        function AddLink(ele, point1, point2, type, pathClassName, circleClassName, width){
+            var newpath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            switch(type) {
+                case "diagonal-y":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "C" + point1[0] + "," + (point2[1] +  point1[1])/2 +
+                                        " " + point2[0] + "," +  point1[1] + " " + point2[0] + "," + point2[1]);
+                    break;
+                    
+                case "diagonal-x":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "C" + (point2[0] +  point1[0])/2 + "," +  point1[1] +
+                                        " " + point1[0] + "," + point2[1] + " " + point2[0] + "," + point2[1]);
+                    break;
+
+                case "horizontal-up":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point2[0] +  point1[0])/2 + "," + (point2[1] - Math.abs(point1[0] - point2[0])/8) +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+
+                case "horizontal-bottom":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point2[0] +  point1[0])/2 + "," + (point2[1] + 10) +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+
+
+                case "vertical-left":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point1[0] - Math.abs(point1[1] - point2[1])/2) + "," + (point1[1] +  point2[1])/2 +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+                    
+                case "vertical-right":
+                    newpath.setAttribute("d", "M" + point1[0] + "," + point1[1] + "Q" + (point1[0] + Math.abs(point1[1] - point2[1])/2) + "," + (point1[1] +  point2[1])/2 +
+                                        " " +  point2[0] + "," + point2[1]);
+                    break;
+            }
+            newpath.setAttribute("class", pathClassName);
+            if(width){
+                newpath.setAttribute("stroke-width", width);
+            }
+            ele.appendChild(newpath);
+
+            if(circleClassName){
+                var newcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                newcircle.setAttribute("cx", point1[0]);
+                newcircle.setAttribute("cy", point1[1]);
+                newcircle.setAttribute("class", circleClassName);
+                ele.appendChild(newcircle);
+            }
+        }
+        function PathsGrow(PathsClassName, time){
+        var paths = document.getElementsByClassName(PathsClassName);
+        var classname = "." + PathsClassName;
+
+        Array.from(paths).forEach(function (path, index, a) {
+            var totalLength = path.getTotalLength();
+            path.setAttribute("stroke-dasharray", totalLength + " " + totalLength);
+            path.setAttribute("stroke-dashoffset", totalLength );
+            path.style.visibility = "visible";
+
+        });
+
+        d3.selectAll(classname)
+            .transition()
+            .duration(time)
+            .attr("stroke-dashoffset", 0);
+
+
+    }
+        function circleMove(PathClass, CircleClass, time) {
+            var paths = document.getElementsByClassName(PathClass);
+            console.log(arguments.callee.name + ": " + arguments[0] + ", "+ arguments[1] + ", "+ arguments[2]);
+            d3.selectAll("." + CircleClass)
+                .attr("r", 4)
+                .transition()
+                .duration(time)
+                .attrTween("cx", function (d, i, a) {
+                    var len = paths[i].getTotalLength();
+                    return function (t) {
+                        var p = paths[i].getPointAtLength((t) * len);
+                        return p.x;
+                    };
+                })
+                .attrTween("cy", function (d, i, a) {
+                    var len = paths[i].getTotalLength();
+                    return function (t) {
+                        var p = paths[i].getPointAtLength((t) * len);
+                        return p.y;
+                    };
+                })
+                .attr("start",  PathsGrow(PathClass, time));
+
+
+        }
+
+        function connectGlobalToSite(SiteArray){
+            var pathClass = "p" + Date.now();
+            var circleClass ="c" + Date.now();
+
+
+            var sites = SiteArray;
+            var outcontainer = document.getElementsByClassName("out-container")[0];
+            var pg = document.getElementsByClassName("top-paths")[0];
+
+
+            var GlobalDriver = document.getElementById("GlobalDriver");
+
+            var Gout = getLoc(outcontainer,GlobalDriver);
+            var GlobalLoc = [Gout[2] + Gout[4]/2, Gout[3] + Gout[5]];
+
+            sites.forEach(function(item, index, array){
+                var temp = document.getElementById(item[0]);
+                var loc = getLoc(outcontainer, temp);
+                var p2 = [loc[2] + loc[4]/2, loc[3]];
+                AddLink(pg, GlobalLoc, p2, "diagonal-y",pathClass, circleClass,item[1]);
+            });
+
+            return [pathClass, circleClass];
+
+    }
+        function connectSiteToEx(siteId, dstHosts) {
+            var pathClass = "p" + Date.now();
+            var circleClass = "c" + Date.now();
+            var site = document.getElementById(siteId);
+            var std = document.getElementById('bg-svg');
+            var pos = getLoc(std,site);
+            console.log(dstHosts[0]);
+            console.log(dstHosts[0]["to-components"]);
+            console.log(dstHosts[0]["to-components"][0]["to-component"]);
+            for(var i = 0; i < dstHosts.length; i++){
+                for(var j = 0; j < dstHosts[i]["to-components"].length; j++){
+                    var exeId = dstHosts[i]["to-components"][j]["to-component"];
+                    var executor = document.getElementById(exeId);
+                    var pos2 = getLoc(std, executor);
+                    var side = getColumn(executor);
+                    console.log(dstHosts[i]["to-components"][j]);
+                    if(side === 'left'){
+                        AddLink(std,[pos[2] + pos[4]/2, pos[3] + pos[5]], [pos2[2] + pos2[4], pos2[3] + pos2[5]/2], "diagonal-x", pathClass,circleClass, dstHosts[i]["to-components"][j]["tasks"].length);
+                        break;
+                    }else {
+                        AddLink(std, [pos[2] + pos[4] / 2, pos[3] + pos[5]], [pos2[2], pos2[3] + pos2[5] / 2], "diagonal-x", pathClass, circleClass, dstHosts[i]["to-components"][j]["tasks"].length);
+                        break;
+                    }
+                }
+            }
+            return [pathClass, circleClass];
+        }
+
+        function innerShuffle(ex, exArr){
+            var pathClass = "p" + Date.now();
+            var circleClass =  "c" + Date.now();
+
+            var exe = document.getElementById(ex);
+            var path_g = document.getElementsByClassName("bottom-paths")[0];
+
+            var std = document.getElementsByClassName("out-container")[0];
+            var pos1 = getLoc(std,exe);
+            var col1 = getColumn(ex);
+
+            for(var i = 0; i < exArr.length; i++){
+
+                var col2 = getColumn(exArr[i][0]);
+                var exe1 = document.getElementById(exArr[i][0]);
+                var pos2 = getLoc(std,exe1);
+                if(col1 === "left"){
+                    var p1 = [pos1[2] + pos1[4], pos1[3] + pos1[5]/2];
+                    if(col2 === "left"){
+                        var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "vertical-right", pathClass,circleClass, exArr[i][1]);
+                    }else{
+                        var p2 = [pos2[2], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass, exArr[i][1]);
+                    }
+                }else{
+                    var p1 = [pos1[2], pos1[3] + pos1[5]/2];
+                    if(col2 === "left"){
+                        var p2 = [pos2[2] + pos2[4], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "diagonal-x", pathClass,circleClass,exArr[i][1]);
+                    }else{
+                        var p2 = [pos2[2], pos2[3] + pos2[5]/2];
+                        AddLink(path_g, p2, p1, "vertical-left", pathClass,circleClass,exArr[i][1]);
+                    }
+                }
+            }
+            return [pathClass, circleClass];
+
+        }
+        function outerShuffle(site, siteArr) {
+            var pathClass = "p" + Date.now();
+            var circleClass = "c" + Date.now();
+
+            console.log(site);
+
+            var thesite = document.getElementById(site);
+            var path_g = document.getElementsByClassName("ss-paths")[0];
+            var std = document.getElementsByClassName("out-container")[0];
+            var pos1 = getLoc(std, thesite);
+
+            for (var i = 0; i < siteArr.length; i++) {
+                var site1 = document.getElementById(siteArr[i][0]);
+                var pos2 = getLoc(std, site1);
+                var p1 = [pos1[2] + pos1[4] / 2, pos1[3]];
+                var p2 = [pos2[2] + pos2[4] / 2, pos2[3]];
+                AddLink(path_g, p2, p1, "horizontal-up", pathClass,circleClass,siteArr[i][1]);
+            }
+            return [pathClass, circleClass];
+        }
+
+
+        {#事件处理函数#}
+        function collapse(event) {
+        console.log(event);
+        if(event.target.className === "executor-div" || event.target.className === "executor-div worker-div-active" ){
+            event.target.parentNode.classList.toggle("worker-div-active");
+        }else{
+            event.target.classList.toggle("worker-div-active");
+        }
+
+    }
+        function addWorker(host, cloud) {
+        var workerDiv = document.createElement("div");
+            workerDiv.className = "worker-div";
+            workerDiv.id = host;
+            workerDiv.addEventListener("click", collapse);
+        var shortHost = host.split('.')[0];
+        var txt = document.createTextNode(shortHost);
+        workerDiv.appendChild(txt);
+        if (typeof cloud === 'undefined'){
+            var currCloud = document.getElementById("cloud-1");
+        }else{
+           currCloud = document.getElementById(cloud);
+        }
+        var workers = currCloud.getElementsByClassName("workers-div")[0];
+        workers.appendChild(workerDiv);
+        return workerDiv;
+    }
+        function addExecutor(execName, host){
+            var workerDiv = document.getElementById(host);
+            var newExec = document.createElement("div");
+            newExec.className = "executor-div";
+            newExec.id = host + '-' + execName;
+
+
+
+            var execProDiv = document.createElement("div");
+            execProDiv.className = 'execProgress';
+
+            var finNumOfTasksP = document.createElement("span");
+            finNumOfTasksP.className = 'finNum';
+            finNumOfTasksP.innerText = '0';
+            var toltalNumOfTasksP = document.createElement("span");
+            toltalNumOfTasksP.className = 'totalNum';
+            toltalNumOfTasksP.innerText = '0';
+
+            var splitText = document.createElement("span");
+            splitText.innerText = '/';
+
+{#            newExec.appendChild(execProDiv);#}
+
+            newExec.appendChild(finNumOfTasksP);
+            newExec.appendChild(splitText);
+            newExec.appendChild(toltalNumOfTasksP);
+
+
+            if (workerDiv === null){
+                var newWorker = addWorker(host);
+                newWorker.appendChild(newExec);
+            }else{
+                workerDiv.appendChild(newExec);
+            }
+    }
+        function addDriver(event) {
+            var host = event["Block Manager ID"]["Host"];
+            var cl = document.getElementById('cloud-1');
+            var drsDiv = cl.getElementsByClassName("drivers-div")[0];
+            var drDiv = document.createElement("div");
+            var txt = document.createTextNode(host);
+            drDiv.className = "driver-div";
+            drDiv.id = host;
+            drDiv.appendChild(txt);
+            drsDiv.appendChild(drDiv);
+        }
+        function startJob(event) {
+            addInfoToTable('jobInfo' ,event);
+
+        }
+        function submitStage(event) {
+            addInfoToTable('stageInfo', event["Stage Info"]);
+            var jobId = getJobId(event["Stage Info"]["Stage ID"]);
+            updateTableStatus("job", jobId, 0, 1);
+        }
+        function startTask(event){
+            updateTaskNum(event['Task Info']['Host'], event['Task Info']['Executor ID'], 1, 1);
+            updateTableStatus("stage", event['Stage ID'], 0, 1);
+        }
+        function endTask(event){
+            updateTaskNum(event['Task Info']['Host'], event['Task Info']['Executor ID'], -1, 0);
+            updateTableStatus("stage", event['Stage ID'], 1, -1);
+        }
+        function stageCompleted(event) {
+            var jobId = getJobId(event["Stage Info"]["Stage ID"]);
+            var subTime = event["Stage Info"]["Submission Time"];
+            var endTime = event["Stage Info"]["Completion Time"];
+            var cost = endTime - subTime;
+            var ms = cost % 1000;
+            var sec = Math.floor(cost / 1000) % 60;
+            var min = Math.floor(cost / 1000 / 60);
+            var val = `${min}min: ${sec}sec: ${ms}ms`;
+            updateTableStatus("job", jobId, 1, -1);
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "提交时间", (new Date(subTime).toLocaleString()));
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "完成时间",(new Date(endTime).toLocaleString()));
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "用时", val);
+        }
+        function jobEnd(event) {
+
+            let subTime = jobSubTime[event["Job ID"]];
+
+            console.log(subTime);
+            let endTime = event["Completion Time"];
+            let cost = endTime - subTime;
+            let ms = cost % 1000;
+            let sec = Math.floor(cost / 1000) % 60;
+            let min = Math.floor(cost / 1000 / 60);
+            let val = `${min}min: ${sec}sec: ${ms}ms`;
+            updateTableTime("jobs-table", event["Job ID"], "完成时间",(new Date(endTime).toLocaleString()));
+            updateTableTime("jobs-table", event["Job ID"], "用时",val);
+        }
+        function appEnd(event){
+            return 0;
+        }
+
+
+
+        {#事件处理辅助函数#}
+        function addInfoToTable(infoType, info) {
+            var tr = document.createElement("tr");
+            switch(infoType){
+                case 'stageInfo':
+                    tr.id = "tr-stage-" + info['Stage ID'];
+                    var tb = document.getElementById("stages-table");
+                    var status = document.createElement("div");
+                    status.id = "stage-status-" + info['Stage ID'];
+                    status.className = "td-status";
+                    status.innerHTML = "<span>0</span>/" + "<span>0</span>";
+                    var infoList = [info['Stage ID'], '-', '-', '-', info['Stage Name'], info['Number of Tasks']];
+                    break;
+                case 'jobInfo':
+                    tr.id = 'tr-job-' + info['Job ID'];
+                    tb = document.getElementById("jobs-table");
+                    var m = parseInt(info['Submission Time']);
+                    jobSubTime[info['Job ID']] = m;
+                    var d = new Date(m);
+                    var ds = d.toLocaleString();
+                    var stageList = [];
+                    for(var i = 0; i < (info['Stage Infos']).length; i++){
+                        stageList.push(info['Stage Infos'][i]['Stage ID']);
+                    }
+                    var status = document.createElement("div");
+                    status.id = "job-status-" + info['Job ID'];
+                    status.className = 'td-status';
+                    status.innerHTML = "<span id=\"running-num\">0</span>/" + "<span>0</span>";
+                    infoList = [info['Job ID'], ds, '-', '-', stageList.join(','), (info['Stage Infos']).length];
+                    break;
+                case 'shuffleInfo':
+                    tr.id = 'tr-shuffle-' + info['Stage ID'];
+                    var status = null;
+                    tb = document.getElementById("shuffles-table");
+                    infoList = [info['Stage ID'], info['Stage Name'], info['Number of Tasks']];
+            }
+
+            var tbody = tb.getElementsByTagName('tbody')[0];
+
+
+
+            for(var i in infoList ){
+                var td = document.createElement("td");
+                var textNode = document.createTextNode(infoList[i]);
+                td.appendChild(textNode);
+                tr.appendChild(td);
+            }
+
+            if(status !== null){
+                tr.appendChild(status);
+            }
+
+            tbody.appendChild(tr);
+
+        }
+        function updateTaskNum(hostId, execId, runAdd, totalAdd){
+
+            var exec = document.getElementById(hostId + '-' + execId);
+
+            var runNumSpan = exec.getElementsByClassName('finNum')[0];
+            var totalNumSpan = exec.getElementsByClassName('totalNum')[0];
+            var oldVal1 = Number(runNumSpan.innerText);
+            var oldVal2 = Number(totalNumSpan.innerText);
+            runNumSpan.innerText = oldVal1 + runAdd;
+            totalNumSpan.innerText = oldVal2 + totalAdd;
+        }
+        function updateTableStatus(tableName, rIndex, c, r) {
+            var statusId = tableName + "-status-" + rIndex;
+            var statusDiv = document.getElementById(statusId);
+            var trId = "tr-" + tableName + '-' + rIndex;
+            var tr = document.getElementById(trId);
+
+            var total = parseInt(tr.cells[5].innerText);
+            var v1 = parseInt(statusDiv.firstElementChild.innerText) + c;
+            var v2 = parseInt(statusDiv.lastElementChild.innerText) + r;
+            statusDiv.firstElementChild.innerText = v1;
+            statusDiv.lastElementChild.innerText = v2;
+
+            var comp = Math.ceil(v1 / total * 100);
+            var run = Math.ceil((v1 + v2) / total * 100);
+
+            statusDiv.style.backgroundImage = `linear-gradient(to right, rgb(102, 189, 254), rgb(102, 189, 254) ${comp}%, rgb(152, 220, 255) ${comp}%, ` +
+                `rgb(152, 220, 255) ${run}%, rgb(255, 255, 255) ${run}%, rgb(255, 255, 255))`;
+
+        }
+        function getJobId(stageId) {
+            var jobTable = document.getElementById('jobs-table');
+            for(var i = 0; i < jobTable.rows[0].cells.length; i++){
+                if(jobTable.rows[0].cells[i].innerText === "stagesList")
+                    var col = i;
+            }
+            for(var j = 1; j < jobTable.rows.length; j++){
+                var stageList = jobTable.rows[j].cells[col].innerText.split(',');
+                if(stageList.includes(stageId.toString())){
+                    return jobTable.rows[j].cells[0].innerText;
+                }
+
+            }
+
+
+        }
+        function updateTableTime(tableName, id, columnName, val){
+            var colIndex;
+            var rowIndex;
+            var t = document.getElementById(tableName);
+            for( let i = 0; i < t.rows[0].cells.length; i++){
+                if(t.rows[0].cells[i].innerHTML === columnName){
+                    colIndex = i;
+                    break;
+                }
+            }
+
+            for( let j = 0; j < t.rows.length; j++){
+                if(t.rows[j].cells[0].innerHTML === id.toString()){
+                    rowIndex = j;
+                    break;
+                }
+            }
+
+            if(val === undefined){
+                return t.rows[rowIndex].cells[colIndex].innerHTML
+            }else{
+                t.rows[rowIndex].cells[colIndex].innerHTML = val;
+            }
+
+        }
+
+        var js = "{\"Event\": \"SparkListenerTaskLaunchToExecutor\",\"from-component\": \"SiteDriver0\",\"from-host\": \"192.168.7.42\", " +
+                "\"to-hosts\": [{\"to-host\": \"192.168.7.44\",\"to-components\": [{\"to-component\": \"test44.test.ivic.org.cn-1\",\"tasks\": [\"taskInfo1-1-1\",\"taskInfo1-1-2\"]}]}," +
+                               "{\"to-host\": \"192.168.7.45\",\"to-components\": [{\"to-component\": \"test45.test.ivic.org.cn-2\",\"tasks\": [\"taskInfo1-3-1\",\"taskInfo1-3-2\",\"taskInfo1-3-4\",\"taskInfo1-3-5\"]}]}]}"
+        var ee = JSON.parse(js);
+        console.log(ee);
+
+
+        var webSocket = io("ws://192.168.7.64:2000");
+        var totalTaskNum = 0;
+        var runningTaskNum = 0;
+        webSocket.on("connect", function () {
+            console.log("connected");
+            webSocket.emit("join", {"job": "{{ jobID }}"})
+
+        });
+
+        webSocket.on("hello", function (data) {
+            var timeLine = document.getElementById("time-line");
+            if (isStopped === 1) {
+                webSocket.emit("stopped", timeLine.value);
+                console.log("stop at " + timeLine.value);
+                return;
+            }
+            var obj = JSON.parse(data);
+
+            timeLine.value = obj.time;
+            var event = obj.data;
+            switch (event["Event"]){
+                case "SparkListenerTaskLaunchToExecutor":
+
+                case 'SparkListenerBlockManagerAdded':
+                    if(event["Block Manager ID"]["Executor ID"] === 'driver'){
+                        addDriver(event);
+                    }
+                    break;
+                case 'SparkListenerExecutorAdded':
+                    addExecutor(event["Executor ID"], event["Executor Info"]["Host"]);
+                    break;
+                case 'SparkListenerJobStart':
+                    startJob(event);
+{#                    var pandc = connectSiteToEx(ee["from-host"], ee["to-hosts"]);#}
+{#                    circleMove(pandc[0], pandc[1], 2000);#}
+                    break;
+                case 'SparkListenerStageSubmitted':
+                    submitStage(event);
+                    break;
+                case 'SparkListenerTaskStart':
+                    startTask(event);
+                    break;
+                case 'SparkListenerTaskEnd':
+                    endTask(event);
+                    break;
+                case 'SparkListenerStageCompleted':
+                    stageCompleted(event);
+                    break;
+                case 'SparkListenerJobEnd':
+                    jobEnd(event);
+                    break;
+                case 'SparkListenerApplicationEnd':
+                    appEnd(event);
+                    break;
+                default:
+                    console.log("Unrecognized event: " + event["Event"]);
+
+
+            }
+            //webSocket.emit("recieved", {stage: stage});
+
+        });
+
+        function sendReplay(val) {
+            console.log("replay to " + val);
+            webSocket.emit("replay", {"point": val})
+
+        }
+        
+        webSocket.on("clear",function () {
+            var cl1 = document.getElementById('cloud-1');
+            var drivers = cl1.getElementsByClassName("drivers-div")[0];
+            drivers.innerHTML = "";
+            var workers = cl1.getElementsByClassName("workers-div")[0];
+            workers.innerHTML = "";
+            var jobTable = document.getElementById("jobs-table");
+            jobTable.tBodies[0].innerHTML = "";
+            var stagesTable = document.getElementById("stages-table");
+            stagesTable.tBodies[0].innerHTML = "";
+            var shufflesTable = document.getElementById("shuffles-table");
+            shufflesTable.tBodies[0].innerHTML = "";
+        });
+
+        webSocket.on("replay", function (data) {
+            var event = JSON.parse(data);
+            if (event === null){
+                console.log("null msg");
+                return
+            }
+            switch (event["Event"]){
+                case 'SparkListenerBlockManagerAdded':
+                    if(event["Block Manager ID"]["Executor ID"] === 'driver'){
+                        addDriver(event);
+                    }
+                    break;
+                case 'SparkListenerExecutorAdded':
+                    addExecutor(event["Executor ID"], event["Executor Info"]["Host"]);
+                    break;
+                case 'SparkListenerJobStart':
+                    startJob(event);
+                    break;
+                case 'SparkListenerStageSubmitted':
+                    submitStage(event);
+                    break;
+                case 'SparkListenerTaskStart':
+                    startTask(event);
+                    break;
+                case 'SparkListenerTaskEnd':
+                    endTask(event);
+                    break;
+                case 'SparkListenerStageCompleted':
+                    stageCompleted(event);
+                    break;
+                case 'SparkListenerJobEnd':
+                    jobEnd(event);
+                    break;
+                case 'SparkListenerApplicationEnd':
+                    appEnd(event);
+                    break;
+                default:
+                    console.log("Unrecognized event: " + event["Event"]);
+
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>
