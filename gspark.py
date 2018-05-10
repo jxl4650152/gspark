@@ -211,6 +211,10 @@ def eventConvert(event):
 def play_thread(req_id):
     job = conn_list[req_id]["job"]
     i = conn_list[req_id]["curr_p"]
+    listlen = r.llen(job)
+    initialevent = '{"Event": "init", "data": %s}'% listlen
+    initialres = '{"time": "0", "data": %s}' % initialevent
+    socketio.emit("play", initialres, room=req_id)
 
     while True:
         socketio.sleep(0)
@@ -230,17 +234,17 @@ def play_thread(req_id):
         else:
             msg = r.lindex(job, -i)
             if not msg:
-                socketio.sleep(0.01)
+                socketio.sleep(2)
                 print "null msg at ", i
                 continue
             res = '{"time": "%s", "data": %s}' % (i, msg)
             print "play", i
-            socketio.emit("hello", res, room=req_id)
+            socketio.emit("play", res, room=req_id)
             i = i + 1
             socketio.sleep(0.07)
 
 
-# coroutine(not thread) to handle web replay
+# coroutine(not thread) to handle event replay
 def replay_thread(req_id):
     while True:
         print "Replay thread waiting..."
@@ -255,19 +259,39 @@ def replay_thread(req_id):
             job = conn_list[req_id]["job"]
             i = conn_list[req_id]["curr_p"]
             i_new = conn_list[req_id]["new_p"]
-            s = 0
             if i_new > i:
-                s = i + 1
-            else:
-                s = 1
+                if i_new / 20 != i / 20:
+                    socketio.emit("clear", room=req_id)
+                    socketio.sleep(0)
+                    keymsg = r.lindex(job + "-k", -(i_new / 20))
+                    socketio.emit("keyframe", keymsg, room=req_id)
+                    print "keyframe at", i_new/20
+                    tmp_p = (i_new / 20) * 20 + 1
+                    while tmp_p < i_new + 1:
+                        print "make up", tmp_p, i_new
+                        msg = r.lindex(job, -tmp_p)
+                        socketio.emit("replay", msg, room=req_id)
+                        tmp_p += 1
+                        socketio.sleep(0)
+                else:
+                    s = i + 1
+                    while s < i_new + 1:
+                        msg = r.lindex(job, -s)
+                        socketio.emit("replay", msg, room=req_id)
+                        s = s + 1
+                        socketio.sleep(0)
+            elif i_new < i:
                 socketio.emit("clear", room=req_id)
                 socketio.sleep(0)
+                keymsg = r.lindex(job + "-k", -(i_new / 20))
+                socketio.emit("keyframe", keymsg, room=req_id)
+                tmp_p = (i_new / 20) * 20 + 1
+                while tmp_p < i_new + 1:
+                    msg = r.lindex(job, -tmp_p)
+                    socketio.emit("replay", msg, room=req_id)
+                    tmp_p += 1
+                    socketio.sleep(0)
 
-            while s < i_new + 1:
-                msg = r.lindex(job, -s)
-                socketio.emit("replay", msg, room=req_id)
-                s = s + 1
-                socketio.sleep(0)
             conn_list[req_id]["curr_p"] = i_new + 1
             socketio.sleep(0)
             conn_list[req_id]["play_stop_flag"] = False

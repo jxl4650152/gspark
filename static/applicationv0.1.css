@@ -1,5 +1,6 @@
 
 #body{
+
     fill-opacity: 1;
     position:relative;
     z-index: 10;
@@ -97,7 +98,6 @@
     }
 
     .cloud-div{
-        display: flex;
         flex-direction: column;
         align-items: center;
         width: 250px;
@@ -113,14 +113,60 @@
         align-content: space-around;
         width: 240px;
         height: 150px;
-        border: 1px solid green;
+        border: 1px solid #357b93;
     }
 
-    .driver-div{
-        width: 200px;
-        height: 70px;
-        border: 1px solid green;
+    .global-master-div{
+        display: flex;
+        flex-direction: column;
+        align-items:center;
+        width: 190px;
+        height: 60px;
+        border: 1px solid #357b93;
         border-radius: 5px;
+
+    }
+    .global-tag-div{
+        margin: 0 auto;
+        width: 40px;
+    }
+
+    .global-tag-div path{
+        fill: #66bdfe;
+    }
+
+    .global-tag-div circle{
+        position: relative;
+        fill: white;
+        stroke: #66bdfe;
+        stroke-width: 2px;
+    }
+
+
+    .driver-div{
+        display: flex;
+        flex-direction: column;
+        align-items:center;
+        width: 190px;
+        height: 60px;
+        border: 1px solid #357b93;
+        border-radius: 5px;
+
+    }
+    .driver-tag-div{
+        margin: 0 auto;
+        width: 40px;
+    }
+
+    .driver-tag-div path{
+        fill: #66bdfe;
+    }
+
+    .driver-tag-div circle{
+        position: relative;
+        fill: white;
+        stroke: #66bdfe;
+        stroke-width: 2px;
     }
 
     .workers-div{
@@ -133,7 +179,7 @@
         width: 210px;
         padding: 15px;
 
-        border: 1px solid green;
+        border: 1px solid #357b93;
         border-bottom-left-radius: 5px;
         border-bottom-right-radius: 5px;
     }
@@ -145,8 +191,9 @@
         margin-top: 15px;
         padding-bottom: 10px;
         width: 80px;
-        border: 1px solid green;
+        border: 1px solid #357b93;
         border-radius: 5px;
+        line-height: 10px;
     }
 
     .worker-div-active{
@@ -167,19 +214,20 @@
         justify-items: center;
         width: 68px;
         height: 25px;
-        border: 1px solid #597b54;
+        border: 1px solid #66bdfe;
         margin-top: 15px;
         background-color: rgb(102, 189, 254);
         opacity: 1;
         transition: all 0.3s ease-out;
-        border-radius: 5px;
+        border-radius: 11px;
+        color: white;
 
 
     }
 
     .finNum{
-        padding-left: 15px;
-        z-index: 40;
+        padding-left: 5px;
+        z-index: inherit;
     }
 
     .executor-div .execProgress{
@@ -206,21 +254,36 @@
 
 
 
-.worker-div path{
-  fill: green;
-  stroke-width: 5px;
-  stroke: green;
+.executor-div path{
+  fill: #66bdfe;
 }
 
-.worker-div circle{
+.executor-div circle{
   position: relative;
-  fill: none;
-  stroke-width: 1px;
-  stroke: green;
+  fill: white;
+
 }
 
+
+
+.worker-tag-div{
+    margin: 0 auto;
+}
+
+
+.worker-tag-div path{
+  fill: #66bdfe;
+}
+
+.worker-tag-div circle{
+  position: relative;
+  fill: white;
+    stroke: #66bdfe;
+    stroke-width: 2px;
+
+}
 .worker-div .executor-tag-div{
-    background-color: white;
+    padding-top: 0;
 }
 
 .animate-path{
@@ -326,7 +389,7 @@ th.submit-time, th.complete-time, th.time-cost{
     width: 180px;
 }
 
-th.stage-num, th.task-num{
+th.stage-num, th.task-num, th.stage-input, th.stage-output, th.shuffle-read, th.shuffle-write{
     width: 100px;
 }
 

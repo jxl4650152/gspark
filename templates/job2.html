@@ -5,7 +5,7 @@
     <title>G-Spark</title>
     <link rel="stylesheet" href="{{url_for("static", filename = "applicationv0.1.css" )}}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename = 'common.css' )}}" type="text/css">
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="{{ url_for('static', filename = 'http_d3js.org_d3.v4.js' )}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 
 </head>
@@ -83,7 +83,7 @@
                 <div class="stop-button" onclick="startToggle()">
                 </div>
             </div>
-            <input id="time-line" type="range" min="0" max="200" step="1"  onchange="sendReplay(this.value)" oninput="output(this.value)">
+            <input id="time-line" type="range" min="0" max="100" step="1"  onchange="sendReplay(this.value)" oninput="output(this.value)">
             <span id="time-line-value"></span>
         </div>
     </div>
@@ -116,8 +116,10 @@
             <thead>
                 <tr>
                     <th class="stage-id">stageID</th>
-                    <th class="submit-time">提交时间</th>
-                    <th class="complete-time">完成时间</th>
+                    <th class="stage-input">input</th>
+                    <th class="stage-output">output</th>
+                    <th class="shuffle-read">shuffleRead</th>
+                    <th class="shuffle-write">shuffleWrite</th>
                     <th class="time-cost">用时</th>
                     <th class="stage-name">stageName</th>
                     <th class="task-num">numOfTasks</th>
@@ -155,6 +157,7 @@
         let isFold = 0;
         let jobSubTime = [];
         let isStopped = 0;
+
         function toggle() {
         document.getElementsByClassName("nav-div")[0].classList.toggle("nav-div-actived");
         document.getElementsByClassName("toggle-button")[0].classList.toggle("toggle-button-actived");
@@ -440,12 +443,21 @@
     }
         function addWorker(host, cloud) {
         var workerDiv = document.createElement("div");
-            workerDiv.className = "worker-div";
-            workerDiv.id = host;
-            workerDiv.addEventListener("click", collapse);
+        workerDiv.className = "worker-div";
+        workerDiv.id = host;
+        workerDiv.addEventListener("click", collapse);
+        let workerTag = document.createElement("div");
+        workerTag.className = "worker-tag-div";
+        workerTag.innerHTML =
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"36\" viewBox=\"0 0 72 80\">\n" +
+            "<circle cy=\"37.45\" cx=\"36.972\" r=40% />\n" +
+            "<path d=\"m18.64 23.492h6.4c3.68 15.72 4.04 17.72 4.56 21h0.08c0.52-3 0.96-5.92 4-21h6.359c3.36 15.76 3.641 17.28 4.28 21h0.08c0.48-2.721 0.96-5.2 4.68-21h6.08l-8.08 28.72h-5.76c-2.96-14.08-3.479-16.88-4.44-22.4h-0.079c-0.88 5.52-1.36 7.6-4.44 22.4h-5.6l-8.12-28.72z\" />\n" +
+            "</svg>";
         var shortHost = host.split('.')[0];
         var txt = document.createTextNode(shortHost);
+        workerDiv.appendChild(workerTag);
         workerDiv.appendChild(txt);
+
         if (typeof cloud === 'undefined'){
             var currCloud = document.getElementById("cloud-1");
         }else{
@@ -455,29 +467,34 @@
         workers.appendChild(workerDiv);
         return workerDiv;
     }
-        function addExecutor(execName, host){
+        function addExecutor(execName, host, finishNum, totalNum){
             var workerDiv = document.getElementById(host);
             var newExec = document.createElement("div");
             newExec.className = "executor-div";
             newExec.id = host + '-' + execName;
 
-
+            var execTagDiv = document.createElement("div");
+            execTagDiv.className = "executor-tag-div";
+            execTagDiv.innerHTML = "<svg version=\"1.1\" width=\"25\" height=25  xmlns=\"http://www.w3.org/2000/svg\">\n" +
+                "    <circle cx=50% cy=50% r=44% />\n" +
+                "    <path d=\"M7 5h10v3h-7v3h7v3h-7v3h7v3h-10z\" fill=\"green\"/>\n" +
+                "  </svg>";
 
             var execProDiv = document.createElement("div");
             execProDiv.className = 'execProgress';
 
             var finNumOfTasksP = document.createElement("span");
             finNumOfTasksP.className = 'finNum';
-            finNumOfTasksP.innerText = '0';
+            finNumOfTasksP.innerText =  finishNum || '0';
             var toltalNumOfTasksP = document.createElement("span");
             toltalNumOfTasksP.className = 'totalNum';
-            toltalNumOfTasksP.innerText = '0';
+            toltalNumOfTasksP.innerText = totalNum || '0';
 
             var splitText = document.createElement("span");
             splitText.innerText = '/';
 
 {#            newExec.appendChild(execProDiv);#}
-
+            newExec.appendChild(execTagDiv);
             newExec.appendChild(finNumOfTasksP);
             newExec.appendChild(splitText);
             newExec.appendChild(toltalNumOfTasksP);
@@ -490,14 +507,40 @@
                 workerDiv.appendChild(newExec);
             }
     }
-        function addDriver(event) {
-            var host = event["Block Manager ID"]["Host"];
+        function addGlobalMaster(event) {
+{#            var host = event["Block Manager ID"]["Host"];#}
+            var cl = document.getElementById('cloud-1');
+            var drsDiv = cl.getElementsByClassName("drivers-div")[0];
+            var globalDiv = document.createElement("div");
+            let drTag = document.createElement("div");
+            drTag.className = "global-tag-div";
+            drTag.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"36\" viewBox=\"0 0 72 72\">\n" +
+                "<circle cy=\"37.45\" cx=\"36.972\" r=\"28.563\" />\n" +
+                "<path d=\"m38.83 36.331h12v15.48h-4l-0.6-3.6c-1.52 1.76-3.72 4.359-8.96 4.359-6.92 0-13.2-4.96-13.2-15.04 0-7.84 4.36-15.24 14.04-15.2 8.8 0 12.28 5.72 12.601 9.68h-6c0-1.12-2.04-4.72-6.28-4.72-4.28 0-8.24 2.96-8.24 10.32 0 7.84 4.28 9.88 8.36 9.88 1.32 0 5.72-0.52 6.96-6.319h-6.681v-4.84z\" />\n" +
+                "</svg>";
+            var txt = document.createTextNode("Global Master");
+            globalDiv.className = "global-master-div";
+            globalDiv.id = "Global Master";
+            globalDiv.appendChild(drTag);
+            globalDiv.appendChild(txt);
+            drsDiv.appendChild(globalDiv);
+        }
+        function addDriver(event, hostId) {
+            addGlobalMaster();
+            var host = hostId || event["Block Manager ID"]["Host"];
             var cl = document.getElementById('cloud-1');
             var drsDiv = cl.getElementsByClassName("drivers-div")[0];
             var drDiv = document.createElement("div");
+            let drTag = document.createElement("div");
+            drTag.className = "driver-tag-div";
+            drTag.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"36\" viewBox=\"0 0 72 72\">\n" +
+                "<circle cy=\"37.45\" cx=\"36.972\" r=\"28.563\" />\n" +
+                "<path d=\"m26.958 23.09h12.68c9.681 0 11.681 8.24 11.681 13.68 0 6.16-2.44 15.04-11.921 15.04h-12.44v-28.72zm5.88 23.76h5.84c4.88 0 6.521-4.92 6.521-9.64 0-8.48-4.04-9.16-6.6-9.16h-5.76v18.8h-0.001z\" />\n" +
+                "</svg>";
             var txt = document.createTextNode(host);
             drDiv.className = "driver-div";
             drDiv.id = host;
+            drDiv.appendChild(drTag);
             drDiv.appendChild(txt);
             drsDiv.appendChild(drDiv);
         }
@@ -519,6 +562,47 @@
             updateTableStatus("stage", event['Stage ID'], 1, -1);
         }
         function stageCompleted(event) {
+            let suffix = ['Bytes', 'KB', 'MB', 'GB'];
+            let input, output, read, written, index;
+            for(let kv of event["Stage Info"]["Accumulables"]){
+                switch(kv["Name"]){
+                    case "internal.metrics.input.bytesRead":
+                        if(kv["Value"] === 0){
+                            input = '-';
+                            break;
+                        }
+                        index = Math.floor(Math.log(parseInt(kv["Value"]))/Math.log(1024));
+                        input = (parseInt(kv["Value"]) / Math.pow(1024, index)).toFixed(2) + suffix[index];
+                        console.log(index);
+                        console.log(input);
+                        break;
+                    case "internal.metrics.output.bytesWritten":
+                        if(kv["Value"] === 0){
+                            output = '-';
+                            break;
+                        }
+                        index = Math.floor(Math.log(parseInt(kv["Value"]))/Math.log(1024));
+                        output = (parseInt(kv["Value"]) / Math.pow(1024, index)).toFixed(2) + suffix[index];
+                        break;
+                    case "internal.metrics.shuffle.read.remoteBytesRead":
+                        if(kv["Value"] === 0){
+                            read = '-';
+                            break;
+                        }
+                        console.log(kv["Value"]);
+                        index = Math.floor(Math.log(parseInt(kv["Value"]))/Math.log(1024));
+                        read = (parseInt(kv["Value"]) / Math.pow(1024, index)).toFixed(2) + suffix[index];
+                        break;
+                    case "internal.metrics.shuffle.write.bytesWritten":
+                        if(kv["Value"] === 0){
+                            written = '-';
+                            break;
+                        }
+                        index = Math.floor(Math.log(parseInt(kv["Value"]))/Math.log(1024));
+                        written = (parseInt(kv["Value"]) / Math.pow(1024, index)).toFixed(2) + suffix[index];
+                        break;
+                }
+            }
             var jobId = getJobId(event["Stage Info"]["Stage ID"]);
             var subTime = event["Stage Info"]["Submission Time"];
             var endTime = event["Stage Info"]["Completion Time"];
@@ -528,15 +612,15 @@
             var min = Math.floor(cost / 1000 / 60);
             var val = `${min}min: ${sec}sec: ${ms}ms`;
             updateTableStatus("job", jobId, 1, -1);
-            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "提交时间", (new Date(subTime).toLocaleString()));
-            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "完成时间",(new Date(endTime).toLocaleString()));
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "input", input);
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "output", output);
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "shuffleRead", read);
+            updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "shuffleWrite", written);
             updateTableTime("stages-table", event["Stage Info"]["Stage ID"], "用时", val);
         }
         function jobEnd(event) {
 
             let subTime = jobSubTime[event["Job ID"]];
-
-            console.log(subTime);
             let endTime = event["Completion Time"];
             let cost = endTime - subTime;
             let ms = cost % 1000;
@@ -557,13 +641,15 @@
             var tr = document.createElement("tr");
             switch(infoType){
                 case 'stageInfo':
-                    tr.id = "tr-stage-" + info['Stage ID'];
+                    tr.id = "tr-stage-" +  info['Stage ID'];
                     var tb = document.getElementById("stages-table");
                     var status = document.createElement("div");
                     status.id = "stage-status-" + info['Stage ID'];
                     status.className = "td-status";
                     status.innerHTML = "<span>0</span>/" + "<span>0</span>";
-                    var infoList = [info['Stage ID'], '-', '-', '-', info['Stage Name'], info['Number of Tasks']];
+                    var infoList = [ info['Stage ID'],  '-', '-',
+                        '-', '-', '-',  info['Stage Name'],
+                        info['Number of Tasks']];
                     break;
                 case 'jobInfo':
                     tr.id = 'tr-job-' + info['Job ID'];
@@ -619,12 +705,25 @@
             totalNumSpan.innerText = oldVal2 + totalAdd;
         }
         function updateTableStatus(tableName, rIndex, c, r) {
+            let index;
+            let tId = tableName + "s-table";
+            let tb = document.getElementById(tId);
+            for(let i = 0; i < tb.rows[0].cells.length; i++){
+                if(tb.rows[0].cells[i].innerHTML === 'status') {
+                    index = i;
+                    break;
+                }
+            }
+
+
             var statusId = tableName + "-status-" + rIndex;
+            console.log(statusId);
             var statusDiv = document.getElementById(statusId);
             var trId = "tr-" + tableName + '-' + rIndex;
+            console.log(trId);
             var tr = document.getElementById(trId);
 
-            var total = parseInt(tr.cells[5].innerText);
+            var total = parseInt(tr.cells[index-1].innerText);
             var v1 = parseInt(statusDiv.firstElementChild.innerText) + c;
             var v2 = parseInt(statusDiv.lastElementChild.innerText) + r;
             statusDiv.firstElementChild.innerText = v1;
@@ -654,6 +753,9 @@
 
         }
         function updateTableTime(tableName, id, columnName, val){
+            if(val === undefined)
+                return;
+
             var colIndex;
             var rowIndex;
             var t = document.getElementById(tableName);
@@ -683,7 +785,7 @@
                 "\"to-hosts\": [{\"to-host\": \"192.168.7.44\",\"to-components\": [{\"to-component\": \"test44.test.ivic.org.cn-1\",\"tasks\": [\"taskInfo1-1-1\",\"taskInfo1-1-2\"]}]}," +
                                "{\"to-host\": \"192.168.7.45\",\"to-components\": [{\"to-component\": \"test45.test.ivic.org.cn-2\",\"tasks\": [\"taskInfo1-3-1\",\"taskInfo1-3-2\",\"taskInfo1-3-4\",\"taskInfo1-3-5\"]}]}]}"
         var ee = JSON.parse(js);
-        console.log(ee);
+
 
 
         var webSocket = io("ws://192.168.7.64:2000");
@@ -695,7 +797,7 @@
 
         });
 
-        webSocket.on("hello", function (data) {
+        webSocket.on("play", function (data) {
             var timeLine = document.getElementById("time-line");
             if (isStopped === 1) {
                 webSocket.emit("stopped", timeLine.value);
@@ -706,7 +808,11 @@
 
             timeLine.value = obj.time;
             var event = obj.data;
+
             switch (event["Event"]){
+                case "init":
+                    timeLine.max = event["data"];
+                    break;
                 case "SparkListenerTaskLaunchToExecutor":
 
                 case 'SparkListenerBlockManagerAdded':
@@ -756,6 +862,7 @@
         }
         
         webSocket.on("clear",function () {
+            console.log("clear event");
             var cl1 = document.getElementById('cloud-1');
             var drivers = cl1.getElementsByClassName("drivers-div")[0];
             drivers.innerHTML = "";
@@ -770,6 +877,7 @@
         });
 
         webSocket.on("replay", function (data) {
+            console.log("replay event");
             var event = JSON.parse(data);
             if (event === null){
                 console.log("null msg");
@@ -813,6 +921,120 @@
 
         });
 
+        webSocket.on("keyframe", function (data) {
+           console.log("keyframe event");
+           let d = JSON.parse(data);
+           console.log(d);
+           for(let driver of d["drivers"]){
+               addDriver(null, driver["host"]);
+           }
+
+           for(let exec of d["executors"]){
+               addExecutor(exec["id"], exec["host"], exec["fin_num"], exec["total_num"]);
+           }
+
+           for(let job of d["jobs"]){
+
+               let tbody = document.getElementById("jobs-table").lastElementChild;
+               let trow = document.createElement("tr");
+               let tid = document.createElement("td");
+               let tsub = document.createElement("td");
+               let tcom = document.createElement("td");
+               let tcost = document.createElement("td");
+               let tstagelist = document.createElement("td");
+               let tstagenum = document.createElement("td");
+               let tstatus = document.createElement("div");
+
+               trow.id = "tr-job-" + parseInt(job["jobid"]);
+               tstatus.id = "job-status-" + parseInt(job["jobid"]);
+               tstatus.className = "td-status";
+
+               let subtime, comtime, costtime;
+               if(job["subtime"] !== '-'){
+                   subtime = new Date(job["subtime"]).toLocaleString();
+                   jobSubTime[job['jobid']] = job["subtime"];
+               }else{
+                   subtime = '-';
+               }
+               if(job["comtime"] !== '-'){
+                   comtime = new Date(job["comtime"]).toLocaleString();
+                   costtime = (job["timecost"]/1000).toFixed(3) + "ms";
+               }else{
+                   comtime = '-';
+               }
+
+               tid.innerHTML = job["jobid"];
+               trow.appendChild(tid);
+               tsub.innerHTML = subtime;
+               trow.appendChild(tsub);
+               tcom.innerHTML = comtime;
+               trow.appendChild(tcom);
+               tcost.innerHTML = costtime;
+               trow.appendChild(tcost);
+               tstagelist.innerHTML = job["stagelist"].join(',');
+               trow.appendChild(tstagelist);
+               tstagenum.innerHTML = job["stagenum"];
+               trow.appendChild(tstagenum);
+               tstatus.className = 'td-status';
+               tstatus.innerHTML = "<span id=\"running-num\">" + job["status"][0] + "</span>/<span>" + job["status"][1] + "</span>";
+               tstatus.style.backgroundImage = `linear-gradient(to right, rgb(102, 189, 254), rgb(102, 189, 254) ${job["status"][0] / job["stagenum"] * 100}%, rgb(152, 220, 255) ${job["status"][0] / job["stagenum"] * 100}%, ` +
+            `rgb(152, 220, 255) ${job["status"][1] / job["stagenum"] * 100}%, rgb(255, 255, 255) ${job["status"][1] / job["stagenum"] * 100}%, rgb(255, 255, 255))`;
+               trow.appendChild(tstatus);
+               tbody.appendChild(trow);
+           }
+           
+            for(let stage of d["stages"]){
+               let tbody = document.getElementById("stages-table").lastElementChild;
+               let trow = document.createElement("tr");
+               let tid = document.createElement("td");
+               let tinput = document.createElement("td");
+               let toutput = document.createElement("td");
+               let tsread = document.createElement("td");
+               let tswrite = document.createElement("td");
+               let tcost = document.createElement("td");
+               let tstagename = document.createElement("td");
+               let tstasknum = document.createElement("td");
+               let tstatus = document.createElement("div");
+               trow.id = "tr-stage-" + parseInt(stage["stageid"]);
+               tstatus.id = "stage-status-" + parseInt(stage["stageid"]);
+               tstatus.className = "td-status";
+
+
+                let costtime;
+                if(stage["timecost"] !== "-"){
+                    costtime = ((stage["timecost"])/1000).toFixed(3);
+                }else{
+                    costtime = "-";
+                }
+
+               tid.innerHTML = stage["stageid"];
+               trow.appendChild(tid);
+               tinput.innerHTML = stage["input"] || '-';
+               trow.appendChild(tinput);
+               toutput.innerHTML = stage["output"] || '-';
+               trow.appendChild(toutput);
+               tsread.innerHTML = stage["sread"] || '-';
+               trow.appendChild(tsread);
+               tswrite.innerHTML = stage["swrite"] || '-';
+               trow.appendChild(tswrite);
+               tcost.innerHTML = costtime;
+               trow.appendChild(tcost);
+               tstagename.innerHTML = stage["stagename"];
+               trow.appendChild(tstagename);
+               tstasknum.innerHTML = stage["tasknum"];
+               trow.appendChild(tstasknum);
+               tstatus.className = 'td-status';
+               tstatus.innerHTML = "<span id=\"running-num\">" + stage["status"][0] + "</span>/<span>" + stage["status"][1] + "</span>";
+               tstatus.style.backgroundImage = `linear-gradient(to right, rgb(102, 189, 254), rgb(102, 189, 254) ${stage["status"][0] / stage["tasknum"] * 100}%, rgb(152, 220, 255) ${stage["status"][0] / stage["tasknum"] * 100}%, ` +
+            `rgb(152, 220, 255) ${stage["status"][1] / stage["tasknum"] * 100}%, rgb(255, 255, 255) ${stage["status"][1] / stage["tasknum"] * 100}%, rgb(255, 255, 255))`;
+               trow.appendChild(tstatus);
+               tbody.appendChild(trow);
+           }
+
+
+
+
+        });
     </script>
 
 </body>

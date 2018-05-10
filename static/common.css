@@ -33,5 +33,6 @@ nav {
     padding-top: 20px;
     width: 220px;
     height: 1000px;
-    background-color:  #bdc3c7;
+    background-color:  #eff1f3;
+    box-shadow: 0 -3px 22px  #bec0be;
 }
